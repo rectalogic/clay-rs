@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "clay",
+    "clay-macros",
+]
+resolver = "2"
