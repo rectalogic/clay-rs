@@ -7,6 +7,15 @@ use std::{
 
 #[repr(C)]
 #[derive(Clone)]
+pub struct ClayArray<'a, T> {
+    capacity: u32,
+    length: u32,
+    internal_array: *const T,
+    _marker: PhantomData<&'a T>,
+}
+
+#[repr(C)]
+#[derive(Clone)]
 pub struct String {
     length: c_int,
     chars: *const c_char,
@@ -37,13 +46,7 @@ impl From<std::string::String> for String {
     }
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct StringArray {
-    capacity: u32,
-    length: u32,
-    internal_array: &String,
-}
+type StringArray<'a> = ClayArray<'a, &'a String>;
 
 #[repr(C)]
 pub struct Arena<'a> {
@@ -74,8 +77,8 @@ impl<'a> Arena<'a> {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Dimensions {
-    width: c_float,
-    height: c_float,
+    pub width: c_float,
+    pub height: c_float,
 }
 
 impl Dimensions {
@@ -87,26 +90,26 @@ impl Dimensions {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Vector2 {
-    x: c_float,
-    y: c_float,
+    pub x: c_float,
+    pub y: c_float,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Color {
-    r: c_float,
-    g: c_float,
-    b: c_float,
-    a: c_float,
+    pub r: c_float,
+    pub g: c_float,
+    pub b: c_float,
+    pub a: c_float,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct BoundingBox {
-    x: c_float,
-    y: c_float,
-    width: c_float,
-    height: c_float,
+    pub x: c_float,
+    pub y: c_float,
+    pub width: c_float,
+    pub height: c_float,
 }
 
 #[repr(C)]
@@ -121,18 +124,14 @@ pub struct ElementId {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct CornerRadius {
-    top_left: c_float,
-    top_right: c_float,
-    bottom_left: c_float,
-    bottom_right: c_float,
+    pub top_left: c_float,
+    pub top_right: c_float,
+    pub bottom_left: c_float,
+    pub bottom_right: c_float,
 }
 
-#[cfg(not(target_os = "windows"))]
-type PackedEnum = u8;
-#[cfg(target_os = "windows")]
-type PackedEnum = u32;
-
 #[packed_enum]
+#[derive(Copy, Clone)]
 pub enum ElementConfigType {
     Rectangle = 1,
     BorderContainer = 2,
@@ -144,37 +143,256 @@ pub enum ElementConfigType {
 }
 
 #[packed_enum]
+#[derive(Copy, Clone)]
 pub enum LayoutDirection {
-    LeftToRight = 0,
-    TopToBottom = 1,
+    LeftToRight,
+    TopToBottom,
 }
 
 #[packed_enum]
+#[derive(Copy, Clone)]
 pub enum LayoutAlignmentX {
-    Left = 0,
-    Right = 1,
-    Center = 2,
+    Left,
+    Right,
+    Center,
 }
 
 #[packed_enum]
+#[derive(Copy, Clone)]
 pub enum LayoutAlignmentY {
-    Top = 0,
-    Bottom = 1,
-    Center = 2,
+    Top,
+    Bottom,
+    Center,
 }
 
 #[packed_enum]
+#[derive(Copy, Clone)]
 pub enum SizingType {
-    Fit = 0,
-    Grow = 1,
-    Percent = 2,
-    Fixed = 3,
+    Fit,
+    Grow,
+    Percent,
+    Fixed,
 }
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ChildAlignment {
+    pub x: LayoutAlignmentX,
+    pub y: LayoutAlignmentY,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct SizingMinMax {
+    pub min: c_float,
+    pub max: c_float,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union SizeUnion {
+    pub size_minmax: SizingMinMax,
+    pub size_percent: c_float,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct SizingAxis {
+    pub size: SizeUnion,
+    pub r#type: SizingType,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Sizing {
+    pub width: SizingAxis,
+    pub height: SizingAxis,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Padding {
+    pub x: u16,
+    pub y: u16,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct LayoutConfig {
+    pub sizing: Sizing,
+    pub padding: Padding,
+    pub child_gap: u16,
+    pub child_alignment: ChildAlignment,
+    pub layout_direction: LayoutDirection,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct RectangleElementConfig {
+    pub color: Color,
+    pub corner_radius: CornerRadius,
+    // CLAY_EXTEND_CONFIG_RECTANGLE
+}
+
+#[packed_enum]
+#[derive(Copy, Clone)]
+pub enum TextElementConfigWrapMode {
+    ClayTextWrapWords,
+    ClayTextWrapNewlines,
+    ClayTextWrapNone,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct TextElementConfig {
+    pub text_color: Color,
+    pub font_id: u16,
+    pub font_size: u16,
+    pub letter_spacing: u16,
+    pub line_height: u16,
+    pub wrap_mode: TextElementConfigWrapMode,
+    // CLAY_EXTEND_CONFIG_TEXT
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ImageElementConfig {
+    pub image_data: *const c_void, // XXX fix
+    pub source_dimensions: Dimensions,
+    // CLAY_EXTEND_CONFIG_IMAGE
+}
+
+#[packed_enum]
+#[derive(Copy, Clone)]
+pub enum FloatingAttachPointType {
+    LeftTop,
+    LeftCenter,
+    LeftBottom,
+    CenterTop,
+    CenterCenter,
+    CenterBottom,
+    RightTop,
+    RightCenter,
+    RightBottom,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FloatingAttachPoints {
+    pub element: FloatingAttachPointType,
+    pub parent: FloatingAttachPointType,
+}
+
+#[packed_enum]
+#[derive(Copy, Clone)]
+pub enum PointerCaptureMode {
+    Capture,
+    Passthrough,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct FloatingElementConfig {
+    pub offset: Vector2,
+    pub expand: Dimensions,
+    pub z_index: u16,
+    pub parent_id: u32,
+    pub attachment: FloatingAttachPoints,
+    pub pointer_capture_mode: PointerCaptureMode,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct CustomElementConfig {
+    custom_data: *const c_void,
+    // CLAY_EXTEND_CONFIG_CUSTOM
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ScrollElementConfig {
+    pub horizontal: bool,
+    pub vertical: bool,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Border {
+    pub width: u32,
+    pub color: Color,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct BorderElementConfig {
+    pub left: Border,
+    pub right: Border,
+    pub top: Border,
+    pub bottom: Border,
+    pub between_children: Border,
+    pub corner_radius: CornerRadius,
+}
+
+// XXX figure this out
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub union ElementConfigUnion<'a> {
+    rectangle_element_config: &'a RectangleElementConfig,
+    text_element_config: &'a TextElementConfig,
+    image_element_config: &'a ImageElementConfig,
+    floating_element_config: &'a FloatingElementConfig,
+    custom_element_config: &'a CustomElementConfig,
+    scroll_element_config: &'a ScrollElementConfig,
+    border_element_config: &'a BorderElementConfig,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ElementConfig<'a> {
+    r#type: ElementConfigType,
+    config: ElementConfigUnion<'a>,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct ScrollContainerData<'a> {
+    scroll_position: &'a Vector2, // XXX
+    scroll_container_dimensions: Dimensions,
+    content_dimensions: Dimensions,
+    config: ScrollElementConfig,
+    found: bool,
+}
+
+#[packed_enum]
+#[derive(Copy, Clone)]
+pub enum RenderCommandType {
+    None,
+    Rectangle,
+    Border,
+    Text,
+    Image,
+    ScissorStart,
+    ScissorEnd,
+    Custom,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct RenderCommand<'a> {
+    bounding_box: BoundingBox,
+    config: ElementConfigUnion<'a>,
+    text: String, // XXX fix
+    id: u32,
+    command_type: RenderCommandType,
+}
+
+type RenderCommandArray<'a> = ClayArray<'a, &'a RenderCommand<'a>>;
 
 #[link(name = "clay")]
 extern "C" {
     fn Clay_MinMemorySize() -> u32;
-    fn Clay_CreateArenaWithCapacityAndMemory(capacity: u32, offset: *const c_void) -> Arena;
+    fn Clay_CreateArenaWithCapacityAndMemory<'a>(capacity: u32, offset: *const c_void)
+        -> Arena<'a>;
     fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
 
     fn Clay__OpenElement();
@@ -228,8 +446,8 @@ mod tests {
         let size: u32 = Arena::min_memory_size();
         let memory = vec![0; size as usize];
         let arena = Arena::new(&memory);
+        assert_eq!(arena.capacity, memory.len() as u64);
         let dimensions = Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
-        assert_eq!(arena.capacity, memory.len() as u64);
     }
 }
