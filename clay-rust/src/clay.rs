@@ -1,4 +1,7 @@
-use std::os::raw::{c_char, c_float, c_int};
+use std::{
+    marker::PhantomData,
+    os::raw::{c_char, c_float, c_int, c_void},
+};
 // XXX just use move instead of Copy, Clone for most of these?
 
 #[repr(C)]
@@ -42,17 +45,22 @@ pub struct StringArray {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
-pub struct Arena {
+pub struct Arena<'a> {
     label: String,
     next_allocation: u64,
     capacity: u64,
-    memory: *const c_char,
+    memory: *mut c_void,
+    _marker: PhantomData<&'a c_void>,
 }
 
-impl Arena {
-    pub fn new(memory: &[u8]) -> Self {
-        unsafe { Clay_CreateArenaWithCapacityAndMemory(memory.len() as u32, memory.as_ptr()) }
+impl<'a> Arena<'a> {
+    pub fn new(memory: &'a [u8]) -> Arena<'a> {
+        unsafe {
+            Clay_CreateArenaWithCapacityAndMemory(
+                memory.len() as u32,
+                memory.as_ptr() as *const c_void,
+            )
+        }
     }
     pub fn min_memory_size() -> u32 {
         unsafe { Clay_MinMemorySize() }
@@ -165,7 +173,7 @@ pub enum SizingType {
 #[link(name = "clay")]
 extern "C" {
     fn Clay_MinMemorySize() -> u32;
-    fn Clay_CreateArenaWithCapacityAndMemory(capacity: u32, offset: *const u8) -> Arena;
+    fn Clay_CreateArenaWithCapacityAndMemory(capacity: u32, offset: *const c_void) -> Arena;
     fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
 
     fn Clay__OpenElement();
