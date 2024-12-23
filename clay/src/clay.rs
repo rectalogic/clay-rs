@@ -3,7 +3,6 @@ use std::{
     marker::PhantomData,
     os::raw::{c_char, c_float, c_int, c_void},
 };
-// XXX just use move instead of Copy, Clone for most of these?
 
 #[repr(C)]
 #[derive(Clone)]
@@ -113,7 +112,7 @@ pub struct BoundingBox {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct ElementId {
     id: u32,
     offset: u32,
@@ -377,7 +376,7 @@ pub enum RenderCommandType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct RenderCommand<'a> {
     bounding_box: BoundingBox,
     config: ElementConfigUnion<'a>,
@@ -386,7 +385,7 @@ pub struct RenderCommand<'a> {
     command_type: RenderCommandType,
 }
 
-type RenderCommandArray<'a> = ClayArray<'a, &'a RenderCommand<'a>>;
+pub type RenderCommandArray<'a> = ClayArray<'a, &'a RenderCommand<'a>>;
 
 #[link(name = "clay")]
 extern "C" {
