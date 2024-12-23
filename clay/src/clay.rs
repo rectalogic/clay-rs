@@ -1,3 +1,4 @@
+use clay_macros::packed_enum;
 use std::{
     marker::PhantomData,
     os::raw::{c_char, c_float, c_int, c_void},
@@ -131,7 +132,7 @@ type PackedEnum = u8;
 #[cfg(target_os = "windows")]
 type PackedEnum = u32;
 
-#[repr(PackedEnum)]
+#[packed_enum]
 pub enum ElementConfigType {
     Rectangle = 1,
     BorderContainer = 2,
@@ -142,27 +143,27 @@ pub enum ElementConfigType {
     Custom = 64,
 }
 
-#[repr(PackedEnum)]
+#[packed_enum]
 pub enum LayoutDirection {
     LeftToRight = 0,
     TopToBottom = 1,
 }
 
-#[repr(PackedEnum)]
+#[packed_enum]
 pub enum LayoutAlignmentX {
     Left = 0,
     Right = 1,
     Center = 2,
 }
 
-#[repr(PackedEnum)]
+#[packed_enum]
 pub enum LayoutAlignmentY {
     Top = 0,
     Bottom = 1,
     Center = 2,
 }
 
-#[repr(PackedEnum)]
+#[packed_enum]
 pub enum SizingType {
     Fit = 0,
     Grow = 1,

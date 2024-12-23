@@ -1,10 +1,11 @@
 [package]
-name = "clay-rust"
+name = "clay"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
 
 [dependencies]
+clay-macros = { path = "../clay-macros" }
 
 [build-dependencies]
 cc = "1.0"
