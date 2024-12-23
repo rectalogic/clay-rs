@@ -10,50 +10,37 @@ pub struct ClayArray<'a, T> {
     capacity: u32,
     length: u32,
     internal_array: *const T,
-    _marker: PhantomData<&'a T>,
+    _lifetime_marker: PhantomData<&'a T>,
 }
 
 #[repr(C)]
 #[derive(Clone)]
-pub struct String {
+pub struct String<'a> {
     length: c_int,
     chars: *const c_char,
-    _owned: Option<Box<[u8]>>,
+    _lifetime_marker: PhantomData<&'a c_char>,
 }
 
-impl From<&str> for String {
+impl<'a> From<&'a str> for String<'a> {
     #[inline]
-    fn from(s: &str) -> String {
+    fn from(s: &'a str) -> String<'a> {
         Self {
             length: s.len() as c_int,
             chars: s.as_ptr() as *const c_char,
-            _owned: None,
+            _lifetime_marker: PhantomData,
         }
     }
 }
 
-impl From<std::string::String> for String {
-    #[inline]
-    fn from(s: std::string::String) -> String {
-        let boxed: Box<[u8]> = Box::from(s.into_bytes());
-        let ptr = boxed.as_ptr() as *const c_char;
-        Self {
-            length: boxed.len() as c_int,
-            chars: ptr,
-            _owned: Some(boxed),
-        }
-    }
-}
-
-type StringArray<'a> = ClayArray<'a, &'a String>;
+type StringArray<'a> = ClayArray<'a, &'a String<'a>>;
 
 #[repr(C)]
 pub struct Arena<'a> {
-    label: String,
+    pub label: String<'a>,
     next_allocation: u64,
     capacity: u64,
     memory: *mut c_void,
-    _marker: PhantomData<&'a c_void>,
+    _lifetime_marker: PhantomData<&'a c_void>,
 }
 
 impl<'a> Arena<'a> {
@@ -113,11 +100,11 @@ pub struct BoundingBox {
 
 #[repr(C)]
 #[derive(Clone)]
-pub struct ElementId {
+pub struct ElementId<'a> {
     id: u32,
     offset: u32,
     base_id: u32,
-    string_id: String,
+    string_id: String<'a>,
 }
 
 #[repr(C)]
@@ -380,7 +367,7 @@ pub enum RenderCommandType {
 pub struct RenderCommand<'a> {
     bounding_box: BoundingBox,
     config: ElementConfigUnion<'a>,
-    text: String, // XXX fix
+    text: String<'a>, // XXX fix
     id: u32,
     command_type: RenderCommandType,
 }
@@ -443,10 +430,22 @@ mod tests {
     #[test]
     fn initialize_arena() {
         let size: u32 = Arena::min_memory_size();
-        let memory = vec![0; size as usize];
+        let memory = vec![0u8; size as usize];
         let arena = Arena::new(&memory);
         assert_eq!(arena.capacity, memory.len() as u64);
         let dimensions = Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
+    }
+
+    #[test]
+    fn initialize_arena_label() {
+        let size: u32 = Arena::min_memory_size();
+        let memory = vec![0u8; size as usize];
+        let mut arena = Arena::new(&memory);
+        arena.label = "Main Arena".into();
+        assert_eq!(arena.capacity, memory.len() as u64);
+        let dimensions = Dimensions::new(300.0, 300.0);
+        arena.initialize(dimensions);
+        // XXX assert on label
     }
 }
