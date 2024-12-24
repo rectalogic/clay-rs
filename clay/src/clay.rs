@@ -56,6 +56,7 @@ impl<'a> Arena<'a> {
         unsafe { Clay_MinMemorySize() }
     }
     pub fn initialize(self, layout_dimensions: Dimensions) {
+        // XXX I think this consumes then frees arena, nothing hangs onto it - need a reference
         unsafe { Clay_Initialize(self, layout_dimensions) }
     }
 }
@@ -80,8 +81,10 @@ pub struct Vector2 {
     pub y: c_float,
 }
 
+// XXX can we make this (and some other structs) tuple structs? Color(0., 128, 255., 255.) - is tht same C layout?
 #[repr(C)]
 #[derive(Copy, Clone, Default)]
+// Clay_Color
 pub struct Color {
     pub r: c_float,
     pub g: c_float,
@@ -193,7 +196,7 @@ pub struct SizingAxis {
 }
 
 impl SizingAxis {
-    fn fit(min: f32, max: f32) -> Self {
+    pub fn fit(min: f32, max: f32) -> Self {
         SizingAxis {
             r#type: SizingType::Fit,
             size: SizeUnion {
@@ -204,7 +207,7 @@ impl SizingAxis {
             },
         }
     }
-    fn grow(min: f32, max: f32) -> Self {
+    pub fn grow(min: f32, max: f32) -> Self {
         SizingAxis {
             r#type: SizingType::Grow,
             size: SizeUnion {
@@ -215,7 +218,7 @@ impl SizingAxis {
             },
         }
     }
-    fn fixed(size: f32) -> Self {
+    pub fn fixed(size: f32) -> Self {
         SizingAxis {
             r#type: SizingType::Fixed,
             size: SizeUnion {
@@ -226,7 +229,7 @@ impl SizingAxis {
             },
         }
     }
-    fn percent(percent: f32) -> Self {
+    pub fn percent(percent: f32) -> Self {
         SizingAxis {
             r#type: SizingType::Percent,
             size: SizeUnion {
@@ -432,6 +435,15 @@ pub mod ui {
         // CLAY_EXTEND_CONFIG_IMAGE
     }
 
+    impl Default for Image {
+        fn default() -> Self {
+            Self {
+                image_data: std::ptr::null(),
+                source_dimensions: Dimensions::default(),
+            }
+        }
+    }
+
     impl Configure for Image {
         fn configure(&self) {
             unsafe {
@@ -505,7 +517,7 @@ pub mod ui {
     }
 
     #[repr(C)]
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     // Clay_BorderElementConfig
     pub struct Border {
         pub left: BorderStyle,
@@ -516,6 +528,63 @@ pub mod ui {
         pub corner_radius: CornerRadius,
     }
 
+    impl Border {
+        pub fn outside(
+            left: BorderStyle,
+            right: BorderStyle,
+            top: BorderStyle,
+            bottom: BorderStyle,
+        ) -> Self {
+            Self {
+                left,
+                right,
+                top,
+                bottom,
+                ..Default::default()
+            }
+        }
+        pub fn outside_radius(width: u32, color: Color, radius: f32) -> Self {
+            Self {
+                left: BorderStyle { width, color },
+                right: BorderStyle { width, color },
+                top: BorderStyle { width, color },
+                bottom: BorderStyle { width, color },
+                corner_radius: CornerRadius {
+                    top_left: radius,
+                    top_right: radius,
+                    bottom_left: radius,
+                    bottom_right: radius,
+                },
+                ..Default::default()
+            }
+        }
+        pub fn all(style: BorderStyle) -> Self {
+            Self {
+                left: style,
+                right: style,
+                top: style,
+                bottom: style,
+                between_children: style,
+                ..Default::default()
+            }
+        }
+        pub fn all_radius(width: u32, color: Color, radius: f32) -> Self {
+            let style = BorderStyle { width, color };
+            Self {
+                left: style,
+                right: style,
+                top: style,
+                bottom: style,
+                between_children: style,
+                corner_radius: CornerRadius {
+                    top_left: radius,
+                    top_right: radius,
+                    bottom_left: radius,
+                    bottom_right: radius,
+                },
+            }
+        }
+    }
     impl Configure for Border {
         fn configure(&self) {
             unsafe {
@@ -526,12 +595,6 @@ pub mod ui {
             }
         }
     }
-    // XXX add Border impl helpers
-    // #define CLAY_BORDER(...) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) __VA_ARGS__) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
-    // #define CLAY_BORDER_OUTSIDE(...) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = __VA_ARGS__, .right = __VA_ARGS__, .top = __VA_ARGS__, .bottom = __VA_ARGS__ }) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
-    // #define CLAY_BORDER_OUTSIDE_RADIUS(width, color, radius) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = { width, color }, .right = { width, color }, .top = { width, color }, .bottom = { width, color }, .cornerRadius = { radius, radius, radius, radius } })}, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
-    // #define CLAY_BORDER_ALL(...) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = __VA_ARGS__, .right = __VA_ARGS__, .top = __VA_ARGS__, .bottom = __VA_ARGS__, .betweenChildren = __VA_ARGS__ }) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
-    // #define CLAY_BORDER_ALL_RADIUS(width, color, radius) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = { width, color }, .right = { width, color }, .top = { width, color }, .bottom = { width, color }, .betweenChildren = { width, color }, .cornerRadius = { radius, radius, radius, radius }}) }))
 }
 
 #[packed_enum]
@@ -565,7 +628,7 @@ extern "C" {
     fn Clay_CreateArenaWithCapacityAndMemory<'a>(capacity: u32, offset: *const c_void)
         -> Arena<'a>;
     fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
-
+    fn Clay_BeginLayout();
     fn Clay__OpenElement();
     fn Clay__CloseElement();
     fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
@@ -607,7 +670,8 @@ macro_rules! clay {
         {
             let _parent = ParentElement;
             $(
-                $expression.configure();
+                let e: &dyn Configure = &$expression;
+                e.configure();
             )+
             unsafe { Clay__ElementPostConfiguration() ; }
             $( $children )?
@@ -650,6 +714,16 @@ mod tests {
 
     #[test]
     fn simple_ui() {
+        unsafe {
+            Clay_BeginLayout(); // XXX wrap this and end into something safer? can clay! macro check if we are in a layout?
+        }
+        let color = Color {
+            r: 240.,
+            g: 189.,
+            b: 100.,
+            a: 255.,
+        };
+
         clay!((
             ui::Id(String::from("HeroBlob")),
             ui::Layout {
@@ -664,8 +738,24 @@ mod tests {
                     ..Default::default()
                 },
                 ..Default::default()
-            }
-        ));
+            },
+            ui::Border::outside_radius(2, color, 10.0)
+        ) {
+            clay!(
+                (
+                    ui::Id(String::from("CheckImage")), //XXX need CLAY_IDI
+                    ui::Layout {
+                        sizing: Sizing { width: SizingAxis::fixed(32.), ..Default::default() },
+                        ..Default::default()
+                    },
+                    ui::Image { source_dimensions: Dimensions { width: 128., height: 128.}, ..Default::default() } // XXX need extended sourceUrl
+                ) {
+                    println!("children");
+                }
+            );
+            // XXX need CLAY_TEXT
+            // clay!(() {});
+        });
         // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
         //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
         //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
