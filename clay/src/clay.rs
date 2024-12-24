@@ -14,7 +14,7 @@ pub struct ClayArray<'a, T> {
 }
 
 #[repr(C)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct String<'a> {
     length: c_int,
     chars: *const c_char,
@@ -61,7 +61,7 @@ impl<'a> Arena<'a> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Dimensions {
     pub width: c_float,
     pub height: c_float,
@@ -74,14 +74,14 @@ impl Dimensions {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Vector2 {
     pub x: c_float,
     pub y: c_float,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Color {
     pub r: c_float,
     pub g: c_float,
@@ -90,7 +90,7 @@ pub struct Color {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct BoundingBox {
     pub x: c_float,
     pub y: c_float,
@@ -108,7 +108,7 @@ pub struct ElementId<'a> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct CornerRadius {
     pub top_left: c_float,
     pub top_right: c_float,
@@ -129,31 +129,35 @@ pub enum ElementConfigType {
 }
 
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum LayoutDirection {
+    #[default]
     LeftToRight,
     TopToBottom,
 }
 
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum LayoutAlignmentX {
+    #[default]
     Left,
     Right,
     Center,
 }
 
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum LayoutAlignmentY {
+    #[default]
     Top,
     Bottom,
     Center,
 }
 
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum SizingType {
+    #[default]
     Fit,
     Grow,
     Percent,
@@ -161,14 +165,14 @@ pub enum SizingType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct ChildAlignment {
     pub x: LayoutAlignmentX,
     pub y: LayoutAlignmentY,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct SizingMinMax {
     pub min: c_float,
     pub max: c_float,
@@ -188,69 +192,89 @@ pub struct SizingAxis {
     pub r#type: SizingType,
 }
 
+impl SizingAxis {
+    fn fit(min: f32, max: f32) -> Self {
+        SizingAxis {
+            r#type: SizingType::Fit,
+            size: SizeUnion {
+                size_minmax: SizingMinMax {
+                    min: min as c_float,
+                    max: max as c_float,
+                },
+            },
+        }
+    }
+    fn grow(min: f32, max: f32) -> Self {
+        SizingAxis {
+            r#type: SizingType::Grow,
+            size: SizeUnion {
+                size_minmax: SizingMinMax {
+                    min: min as c_float,
+                    max: max as c_float,
+                },
+            },
+        }
+    }
+    fn fixed(size: f32) -> Self {
+        SizingAxis {
+            r#type: SizingType::Fixed,
+            size: SizeUnion {
+                size_minmax: SizingMinMax {
+                    min: size as c_float,
+                    max: size as c_float,
+                },
+            },
+        }
+    }
+    fn percent(percent: f32) -> Self {
+        SizingAxis {
+            r#type: SizingType::Percent,
+            size: SizeUnion {
+                size_percent: percent as c_float,
+            },
+        }
+    }
+}
+impl Default for SizingAxis {
+    fn default() -> Self {
+        Self {
+            r#type: SizingType::Fit,
+            size: SizeUnion {
+                size_minmax: SizingMinMax::default(),
+            },
+        }
+    }
+}
+
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
+// Clay_Sizing
 pub struct Sizing {
     pub width: SizingAxis,
     pub height: SizingAxis,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct Padding {
     pub x: u16,
     pub y: u16,
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct LayoutConfig {
-    pub sizing: Sizing,
-    pub padding: Padding,
-    pub child_gap: u16,
-    pub child_alignment: ChildAlignment,
-    pub layout_direction: LayoutDirection,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct RectangleElementConfig {
-    pub color: Color,
-    pub corner_radius: CornerRadius,
-    // CLAY_EXTEND_CONFIG_RECTANGLE
-}
-
 #[packed_enum]
-#[derive(Copy, Clone)]
-pub enum TextElementConfigWrapMode {
+#[derive(Copy, Clone, Default)]
+// Clay_TextElementConfigWrapMode
+pub enum TextWrapMode {
+    #[default]
     ClayTextWrapWords,
     ClayTextWrapNewlines,
     ClayTextWrapNone,
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct TextElementConfig {
-    pub text_color: Color,
-    pub font_id: u16,
-    pub font_size: u16,
-    pub letter_spacing: u16,
-    pub line_height: u16,
-    pub wrap_mode: TextElementConfigWrapMode,
-    // CLAY_EXTEND_CONFIG_TEXT
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct ImageElementConfig {
-    pub image_data: *const c_void, // XXX fix
-    pub source_dimensions: Dimensions,
-    // CLAY_EXTEND_CONFIG_IMAGE
-}
-
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum FloatingAttachPointType {
+    #[default]
     LeftTop,
     LeftCenter,
     LeftBottom,
@@ -263,78 +287,44 @@ pub enum FloatingAttachPointType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub struct FloatingAttachPoints {
     pub element: FloatingAttachPointType,
     pub parent: FloatingAttachPointType,
 }
 
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum PointerCaptureMode {
+    #[default]
     Capture,
     Passthrough,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
-pub struct FloatingElementConfig {
-    pub offset: Vector2,
-    pub expand: Dimensions,
-    pub z_index: u16,
-    pub parent_id: u32,
-    pub attachment: FloatingAttachPoints,
-    pub pointer_capture_mode: PointerCaptureMode,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct CustomElementConfig {
-    custom_data: *const c_void,
-    // CLAY_EXTEND_CONFIG_CUSTOM
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct ScrollElementConfig {
-    pub horizontal: bool,
-    pub vertical: bool,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct Border {
+#[derive(Copy, Clone, Default)]
+// Clay_Border
+pub struct BorderStyle {
     pub width: u32,
     pub color: Color,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct BorderElementConfig {
-    pub left: Border,
-    pub right: Border,
-    pub top: Border,
-    pub bottom: Border,
-    pub between_children: Border,
-    pub corner_radius: CornerRadius,
 }
 
 // XXX figure this out
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union ElementConfigUnion<'a> {
-    rectangle_element_config: &'a RectangleElementConfig,
-    text_element_config: &'a TextElementConfig,
-    image_element_config: &'a ImageElementConfig,
-    floating_element_config: &'a FloatingElementConfig,
-    custom_element_config: &'a CustomElementConfig,
-    scroll_element_config: &'a ScrollElementConfig,
-    border_element_config: &'a BorderElementConfig,
+union ElementConfigUnion<'a> {
+    rectangle_element_config: &'a ui::Rectangle,
+    text_element_config: &'a ui::Text,
+    image_element_config: &'a ui::Image,
+    floating_element_config: &'a ui::Floating,
+    custom_element_config: &'a ui::Custom,
+    scroll_element_config: &'a ui::Scroll,
+    border_element_config: &'a ui::Border,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct ElementConfig<'a> {
+struct ElementConfig<'a> {
     r#type: ElementConfigType,
     config: ElementConfigUnion<'a>,
 }
@@ -345,8 +335,203 @@ pub struct ScrollContainerData<'a> {
     scroll_position: &'a Vector2, // XXX
     scroll_container_dimensions: Dimensions,
     content_dimensions: Dimensions,
-    config: ScrollElementConfig,
+    config: ui::Scroll,
     found: bool,
+}
+
+trait Configure {
+    fn configure(&self);
+}
+
+pub mod ui {
+    use super::*;
+
+    pub struct Id<'a>(pub String<'a>);
+
+    // CLAY_ID
+    impl Configure for Id<'_> {
+        fn configure(&self) {
+            unsafe {
+                Clay__AttachId(Clay__HashString(self.0, 0, 0));
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone, Default)]
+    // Clay_LayoutConfig
+    pub struct Layout {
+        pub sizing: Sizing,
+        pub padding: Padding,
+        pub child_gap: u16,
+        pub child_alignment: ChildAlignment,
+        pub layout_direction: LayoutDirection,
+    }
+
+    impl Configure for Layout {
+        fn configure(&self) {
+            unsafe {
+                Clay__AttachLayoutConfig(Clay__StoreLayoutConfig(*self));
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_RectangleElementConfig
+    pub struct Rectangle {
+        pub color: Color,
+        pub corner_radius: CornerRadius,
+        // CLAY_EXTEND_CONFIG_RECTANGLE
+    }
+
+    impl Configure for Rectangle {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    rectangle_element_config: Clay__StoreRectangleElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::Rectangle);
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_TextElementConfig
+    pub struct Text {
+        pub text_color: Color,
+        pub font_id: u16,
+        pub font_size: u16,
+        pub letter_spacing: u16,
+        pub line_height: u16,
+        pub wrap_mode: TextWrapMode,
+        // CLAY_EXTEND_CONFIG_TEXT
+    }
+
+    //XXX Text takes a String and a TextElementConfig
+    //XXX CLAY_TEXT(CLAY_STRING("FOO"), CLAY_TEXT_CONFIG({...}))
+    // #define CLAY_TEXT(text, textConfig) Clay__OpenTextElement(text, textConfig)
+    impl Configure for Text {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    text_element_config: Clay__StoreTextElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::Text);
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_ImageElementConfig
+    pub struct Image {
+        pub image_data: *const c_void, // XXX fix
+        pub source_dimensions: Dimensions,
+        // CLAY_EXTEND_CONFIG_IMAGE
+    }
+
+    impl Configure for Image {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    image_element_config: Clay__StoreImageElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::Image);
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_FloatingElementConfig
+    pub struct Floating {
+        pub offset: Vector2,
+        pub expand: Dimensions,
+        pub z_index: u16,
+        pub parent_id: u32,
+        pub attachment: FloatingAttachPoints,
+        pub pointer_capture_mode: PointerCaptureMode,
+    }
+
+    impl Configure for Floating {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    floating_element_config: Clay__StoreFloatingElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::FloatingContainer);
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_CustomElementConfig
+    pub struct Custom {
+        custom_data: *const c_void,
+        // CLAY_EXTEND_CONFIG_CUSTOM
+    }
+
+    impl Configure for Custom {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    custom_element_config: Clay__StoreCustomElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::Custom);
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_ScrollElementConfig
+    pub struct Scroll {
+        pub horizontal: bool,
+        pub vertical: bool,
+    }
+
+    impl Configure for Scroll {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    scroll_element_config: Clay__StoreScrollElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::ScrollContainer);
+            }
+        }
+    }
+
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    // Clay_BorderElementConfig
+    pub struct Border {
+        pub left: BorderStyle,
+        pub right: BorderStyle,
+        pub top: BorderStyle,
+        pub bottom: BorderStyle,
+        pub between_children: BorderStyle,
+        pub corner_radius: CornerRadius,
+    }
+
+    impl Configure for Border {
+        fn configure(&self) {
+            unsafe {
+                let config = ElementConfigUnion {
+                    border_element_config: Clay__StoreBorderElementConfig(*self),
+                };
+                Clay__AttachElementConfig(config, ElementConfigType::BorderContainer);
+            }
+        }
+    }
+    // XXX add Border impl helpers
+    // #define CLAY_BORDER(...) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) __VA_ARGS__) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
+    // #define CLAY_BORDER_OUTSIDE(...) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = __VA_ARGS__, .right = __VA_ARGS__, .top = __VA_ARGS__, .bottom = __VA_ARGS__ }) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
+    // #define CLAY_BORDER_OUTSIDE_RADIUS(width, color, radius) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = { width, color }, .right = { width, color }, .top = { width, color }, .bottom = { width, color }, .cornerRadius = { radius, radius, radius, radius } })}, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
+    // #define CLAY_BORDER_ALL(...) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = __VA_ARGS__, .right = __VA_ARGS__, .top = __VA_ARGS__, .bottom = __VA_ARGS__, .betweenChildren = __VA_ARGS__ }) }, CLAY__ELEMENT_CONFIG_TYPE_BORDER_CONTAINER))
+    // #define CLAY_BORDER_ALL_RADIUS(width, color, radius) Clay__AttachElementConfig(CLAY__CONFIG_WRAPPER(Clay_ElementConfigUnion, { .borderElementConfig = Clay__StoreBorderElementConfig(CLAY__INIT(Clay_BorderElementConfig) { .left = { width, color }, .right = { width, color }, .top = { width, color }, .bottom = { width, color }, .betweenChildren = { width, color }, .cornerRadius = { radius, radius, radius, radius }}) }))
 }
 
 #[packed_enum]
@@ -382,13 +567,25 @@ extern "C" {
     fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
 
     fn Clay__OpenElement();
-    fn Clay__ElementPostConfiguration();
     fn Clay__CloseElement();
+    fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
+    fn Clay__ElementPostConfiguration();
+    fn Clay__AttachId(id: ElementId);
+    fn Clay__AttachLayoutConfig(config: &ui::Layout);
+    fn Clay__AttachElementConfig(config: ElementConfigUnion, r#type: ElementConfigType);
+    fn Clay__StoreRectangleElementConfig<'a>(config: ui::Rectangle) -> &'a ui::Rectangle;
+    fn Clay__StoreTextElementConfig<'a>(config: ui::Text) -> &'a ui::Text;
+    fn Clay__StoreImageElementConfig<'a>(config: ui::Image) -> &'a ui::Image;
+    fn Clay__StoreFloatingElementConfig<'a>(config: ui::Floating) -> &'a ui::Floating;
+    fn Clay__StoreCustomElementConfig<'a>(config: ui::Custom) -> &'a ui::Custom;
+    fn Clay__StoreScrollElementConfig<'a>(config: ui::Scroll) -> &'a ui::Scroll;
+    fn Clay__StoreBorderElementConfig<'a>(config: ui::Border) -> &'a ui::Border;
+    fn Clay__HashString(key: String, offset: u32, seed: u32) -> ElementId;
 }
 
-struct Element;
+struct ParentElement;
 
-impl Element {
+impl ParentElement {
     fn new() {
         unsafe {
             Clay__OpenElement();
@@ -396,7 +593,7 @@ impl Element {
     }
 }
 
-impl Drop for Element {
+impl Drop for ParentElement {
     fn drop(&mut self) {
         unsafe {
             Clay__CloseElement();
@@ -408,8 +605,10 @@ impl Drop for Element {
 macro_rules! clay {
     ( ( $( $expression:expr ),+ ) $( $children:block )? ) => {
         {
-            let _guard = Element;
-            $( $expression );+;
+            let _parent = ParentElement;
+            $(
+                $expression.configure();
+            )+
             unsafe { Clay__ElementPostConfiguration() ; }
             $( $children )?
         }
@@ -447,5 +646,29 @@ mod tests {
         let dimensions = Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
         // XXX assert on label
+    }
+
+    #[test]
+    fn simple_ui() {
+        clay!((
+            ui::Id(String::from("HeroBlob")),
+            ui::Layout {
+                sizing: Sizing {
+                    width: SizingAxis::grow(0.0, 480.0),
+                    ..Default::default()
+                },
+                padding: Padding { x: 16, y: 16 },
+                child_gap: 16,
+                child_alignment: ChildAlignment {
+                    y: LayoutAlignmentY::Center,
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        ));
+        // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
+        //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
+        //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
+        // }
     }
 }
