@@ -1,6 +1,6 @@
 use crate::{data, external, ui};
 use clay_macros::packed_enum;
-use std::{marker::PhantomData, os::raw::c_void};
+use std::{fmt, marker::PhantomData, os::raw::c_void};
 
 #[inline]
 pub fn default<T: Default>() -> T {
@@ -75,13 +75,6 @@ pub(crate) union ElementConfigUnion<'a> {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-struct ElementConfig<'a> {
-    r#type: ElementConfigType,
-    config: ElementConfigUnion<'a>,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
 pub struct ScrollContainerData<'a> {
     scroll_position: &'a data::Vector2, // XXX
     scroll_container_dimensions: data::Dimensions,
@@ -111,6 +104,32 @@ pub struct RenderCommand<'a> {
     text: data::String<'a>, // XXX fix
     id: u32,
     command_type: RenderCommandType,
+}
+
+impl<'a> fmt::Debug for RenderCommand<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RenderCommand")
+            .field("bounding_box", &self.bounding_box)
+            .field(
+                "config",
+                match self.command_type {
+                    RenderCommandType::Rectangle => unsafe {
+                        &self.config.rectangle_element_config
+                    },
+                    RenderCommandType::Text => unsafe { &self.config.text_element_config },
+                    RenderCommandType::Border => unsafe { &self.config.border_element_config },
+                    RenderCommandType::Image => unsafe { &self.config.image_element_config },
+                    RenderCommandType::Custom => unsafe { &self.config.custom_element_config },
+                    RenderCommandType::None => &"None",
+                    RenderCommandType::ScissorStart => &"ScissorStart",
+                    RenderCommandType::ScissorEnd => &"ScissorEnd",
+                },
+            )
+            .field("text", &self.text)
+            .field("id", &self.id)
+            .field("command_type", &self.command_type)
+            .finish()
+    }
 }
 
 pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;

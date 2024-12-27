@@ -228,6 +228,13 @@ impl fmt::Debug for SizingAxis {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SizingAxis")
             .field("type", &self.r#type)
+            .field(
+                "size",
+                match self.r#type {
+                    SizingType::Percent => unsafe { &self.size.size_percent },
+                    _ => unsafe { &self.size.size_minmax },
+                },
+            )
             .finish()
     }
 }
