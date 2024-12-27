@@ -1,5 +1,6 @@
 use crate::clay::ClayArray;
 use clay_macros::packed_enum;
+use core::slice;
 use std::{
     fmt,
     marker::PhantomData,
@@ -7,7 +8,7 @@ use std::{
 };
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Copy, Clone)]
 pub struct String<'a> {
     length: c_int,
     chars: *const c_char,
@@ -17,6 +18,18 @@ pub struct String<'a> {
 impl<'a> String<'a> {
     pub fn len(&self) -> usize {
         self.length as usize
+    }
+}
+
+impl<'a> fmt::Debug for String<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut f = f.debug_struct("String");
+        let bytes = unsafe { slice::from_raw_parts(self.chars as *const u8, self.length as usize) };
+        if let Ok(s) = std::str::from_utf8(bytes) {
+            f.field("chars", &s).finish()
+        } else {
+            f.field("chars", &"<invalid UTF-8").finish()
+        }
     }
 }
 
