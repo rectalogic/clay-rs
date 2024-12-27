@@ -4,6 +4,7 @@ use crate::data;
 use crate::external;
 use std::os::raw::c_void;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Id<'a>(pub data::String<'a>);
 
 // CLAY_ID
@@ -15,6 +16,7 @@ impl Configure for Id<'_> {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
 pub struct IdI<'a>(pub data::String<'a>, pub u32);
 
 // CLAY_IDI
@@ -27,7 +29,7 @@ impl Configure for IdI<'_> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_LayoutConfig
 pub struct Layout {
     pub sizing: data::Sizing,
@@ -46,7 +48,7 @@ impl Configure for Layout {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 // Clay_RectangleElementConfig
 pub struct Rectangle {
     pub color: data::Color,
@@ -66,7 +68,7 @@ impl Configure for Rectangle {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_TextElementConfig
 pub struct Text {
     pub text_color: data::Color,
@@ -87,7 +89,7 @@ impl Text {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 // Clay_ImageElementConfig
 pub struct Image {
     pub image_data: *const c_void, // XXX fix
@@ -116,7 +118,7 @@ impl Configure for Image {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 // Clay_FloatingElementConfig
 pub struct Floating {
     pub offset: data::Vector2,
@@ -139,7 +141,7 @@ impl Configure for Floating {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 // Clay_CustomElementConfig
 pub struct Custom {
     custom_data: *const c_void,
@@ -158,7 +160,7 @@ impl Configure for Custom {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 // Clay_ScrollElementConfig
 pub struct Scroll {
     pub horizontal: bool,
@@ -177,7 +179,7 @@ impl Configure for Scroll {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_BorderElementConfig
 pub struct Border {
     pub left: data::BorderStyle,
