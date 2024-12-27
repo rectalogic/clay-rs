@@ -1,5 +1,4 @@
-pub use crate::ui;
-use crate::{data, external};
+use crate::{data, external, ui};
 use clay_macros::packed_enum;
 use std::{marker::PhantomData, os::raw::c_void};
 
@@ -91,7 +90,7 @@ pub struct ScrollContainerData<'a> {
     found: bool,
 }
 
-pub(crate) trait Configure {
+pub trait Configure {
     fn configure(&self);
 }
 
@@ -120,21 +119,30 @@ pub struct RenderCommand<'a> {
 
 pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
 
-struct ParentElement;
+pub mod internal {
+    use super::external;
 
-impl ParentElement {
-    fn new() -> Self {
-        unsafe {
-            external::Clay__OpenElement();
+    pub struct ParentElement;
+
+    impl ParentElement {
+        pub fn new() -> Self {
+            unsafe {
+                external::Clay__OpenElement();
+            }
+            Self
         }
-        Self
+        pub fn post_configuration(&self) {
+            unsafe {
+                external::Clay__ElementPostConfiguration();
+            }
+        }
     }
-}
 
-impl Drop for ParentElement {
-    fn drop(&mut self) {
-        unsafe {
-            external::Clay__CloseElement();
+    impl Drop for ParentElement {
+        fn drop(&mut self) {
+            unsafe {
+                external::Clay__CloseElement();
+            }
         }
     }
 }
@@ -143,9 +151,9 @@ impl Drop for ParentElement {
 macro_rules! clay {
     ( ( $( $expression:expr ),+ ) $( $children:block )? ) => {
         {
-            let _parent = ParentElement::new();
-            $( $expression.configure(); )+
-            unsafe { external::Clay__ElementPostConfiguration() ; }
+            let parent = $crate::internal::ParentElement::new();
+            $( $crate::Configure::configure(&$expression); )+
+            parent.post_configuration();
             $( $children )?
         }
     };
@@ -182,73 +190,5 @@ mod tests {
         let dimensions = data::Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
         // XXX assert on label
-    }
-
-    #[test]
-    fn simple_ui() {
-        extern "C" fn measure(text: &data::String, config: &ui::Text) -> data::Dimensions {
-            data::Dimensions {
-                width: (text.len() * 10) as f32,
-                height: 18.,
-            }
-        }
-        ui::set_measure_text_callback(measure);
-
-        let size: u32 = Arena::min_memory_size();
-        let memory = vec![0u8; size as usize];
-        let arena = Arena::new(&memory);
-        let dimensions = data::Dimensions::new(300.0, 300.0);
-        arena.initialize(dimensions);
-        let render_commands = Arena::render(|| {
-            let color = data::Color {
-                r: 240.,
-                g: 189.,
-                b: 100.,
-                a: 255.,
-            };
-            const FONT_ID_BODY_24: u16 = 2;
-
-            clay!((
-                ui::IdI(data::String::from("HeroBlob"), 1),
-                ui::Layout {
-                    sizing: data::Sizing {
-                        width: data::SizingAxis::grow(0.0, 480.0),
-                        ..default()
-                    },
-                    padding: data::Padding { x: 16, y: 16 },
-                    child_gap: 16,
-                    child_alignment: data::ChildAlignment {
-                        y: data::LayoutAlignmentY::Center,
-                        ..default()
-                    },
-                    ..default()
-                },
-                ui::Border::outside_radius(2, color, 10.0)
-            ) {
-                clay!(
-                    (
-                        ui::Id(data::String::from("CheckImage")),
-                        ui::Layout {
-                            sizing: data::Sizing { width: data::SizingAxis::fixed(32.), ..default() },
-                            ..default()
-                        },
-                        ui::Image { source_dimensions: data::Dimensions { width: 128., height: 128.}, ..default() } // XXX need extended sourceUrl
-                    ) {
-                        println!("children");
-                    }
-                );
-                ui::Text {
-                    font_size: 18,
-                    font_id: FONT_ID_BODY_24,
-                    text_color: color,
-                    ..default()
-                }.with(data::String::from("Some text here"));
-            });
-            // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
-            //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
-            //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
-            // }
-        });
-        println!("done");
     }
 }

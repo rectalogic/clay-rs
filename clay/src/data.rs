@@ -1,12 +1,13 @@
 use crate::clay::ClayArray;
 use clay_macros::packed_enum;
 use std::{
+    fmt,
     marker::PhantomData,
     os::raw::{c_char, c_float, c_int},
 };
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct String<'a> {
     length: c_int,
     chars: *const c_char,
@@ -33,7 +34,7 @@ impl<'a> From<&'a str> for String<'a> {
 type StringArray<'a> = ClayArray<'a, String<'a>>;
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Dimensions {
     pub width: c_float,
     pub height: c_float,
@@ -46,7 +47,7 @@ impl Dimensions {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Vector2 {
     pub x: c_float,
     pub y: c_float,
@@ -54,7 +55,7 @@ pub struct Vector2 {
 
 // XXX can we make this (and some other structs) tuple structs? Color(0., 128, 255., 255.) - is tht same C layout?
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_Color
 pub struct Color {
     pub r: c_float,
@@ -64,7 +65,7 @@ pub struct Color {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct BoundingBox {
     pub x: c_float,
     pub y: c_float,
@@ -83,7 +84,7 @@ pub struct ElementId<'a> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct CornerRadius {
     pub top_left: c_float,
     pub top_right: c_float,
@@ -92,7 +93,7 @@ pub struct CornerRadius {
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum LayoutDirection {
     #[default]
     LeftToRight,
@@ -100,7 +101,7 @@ pub enum LayoutDirection {
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum LayoutAlignmentX {
     #[default]
     Left,
@@ -109,7 +110,7 @@ pub enum LayoutAlignmentX {
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum LayoutAlignmentY {
     #[default]
     Top,
@@ -118,7 +119,7 @@ pub enum LayoutAlignmentY {
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum SizingType {
     #[default]
     Fit,
@@ -128,14 +129,14 @@ pub enum SizingType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct ChildAlignment {
     pub x: LayoutAlignmentX,
     pub y: LayoutAlignmentY,
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct SizingMinMax {
     pub min: c_float,
     pub max: c_float,
@@ -198,6 +199,7 @@ impl SizingAxis {
         }
     }
 }
+
 impl Default for SizingAxis {
     fn default() -> Self {
         Self {
@@ -209,8 +211,16 @@ impl Default for SizingAxis {
     }
 }
 
+impl fmt::Debug for SizingAxis {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SizingAxis")
+            .field("type", &self.r#type)
+            .finish()
+    }
+}
+
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_Sizing
 pub struct Sizing {
     pub width: SizingAxis,
@@ -218,14 +228,14 @@ pub struct Sizing {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Padding {
     pub x: u16,
     pub y: u16,
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_TextElementConfigWrapMode
 pub enum TextWrapMode {
     #[default]
@@ -235,7 +245,7 @@ pub enum TextWrapMode {
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum FloatingAttachPointType {
     #[default]
     LeftTop,
@@ -250,14 +260,14 @@ pub enum FloatingAttachPointType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct FloatingAttachPoints {
     pub element: FloatingAttachPointType,
     pub parent: FloatingAttachPointType,
 }
 
 #[packed_enum]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub enum PointerCaptureMode {
     #[default]
     Capture,
@@ -265,7 +275,7 @@ pub enum PointerCaptureMode {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 // Clay_Border
 pub struct BorderStyle {
     pub width: u32,
