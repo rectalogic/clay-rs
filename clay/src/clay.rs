@@ -5,7 +5,7 @@ use std::{
 };
 
 #[repr(C)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct ClayArray<'a, T> {
     capacity: u32,
     length: u32,
@@ -32,7 +32,7 @@ impl<'a> From<&'a str> for String<'a> {
     }
 }
 
-type StringArray<'a> = ClayArray<'a, &'a String<'a>>;
+type StringArray<'a> = ClayArray<'a, String<'a>>;
 
 #[repr(C)]
 pub struct Arena<'a> {
@@ -626,7 +626,7 @@ pub struct RenderCommand<'a> {
     command_type: RenderCommandType,
 }
 
-pub type RenderCommandArray<'a> = ClayArray<'a, &'a RenderCommand<'a>>;
+pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
 
 #[link(name = "clay")]
 extern "C" {
@@ -641,7 +641,7 @@ extern "C" {
     fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
     fn Clay__ElementPostConfiguration();
     fn Clay__AttachId(id: ElementId);
-    fn Clay__AttachLayoutConfig(config: &ui::Layout);
+    fn Clay__AttachLayoutConfig<'a>(config: &'a ui::Layout);
     fn Clay__AttachElementConfig(config: ElementConfigUnion, r#type: ElementConfigType);
     fn Clay__StoreRectangleElementConfig<'a>(config: ui::Rectangle) -> &'a ui::Rectangle;
     fn Clay__StoreTextElementConfig<'a>(config: ui::Text) -> &'a ui::Text;
@@ -656,10 +656,11 @@ extern "C" {
 struct ParentElement;
 
 impl ParentElement {
-    fn new() {
+    fn new() -> Self {
         unsafe {
             Clay__OpenElement();
         }
+        Self
     }
 }
 
@@ -675,11 +676,8 @@ impl Drop for ParentElement {
 macro_rules! clay {
     ( ( $( $expression:expr ),+ ) $( $children:block )? ) => {
         {
-            let _parent = ParentElement;
-            $(
-                let e: &dyn Configure = &$expression;
-                e.configure();
-            )+
+            let _parent = ParentElement::new();
+            $( $expression.configure(); )+
             unsafe { Clay__ElementPostConfiguration() ; }
             $( $children )?
         }
