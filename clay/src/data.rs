@@ -15,21 +15,22 @@ pub struct String<'a> {
     _lifetime_marker: PhantomData<&'a c_char>,
 }
 
-impl<'a> String<'a> {
+impl String<'_> {
     pub fn len(&self) -> usize {
         self.length as usize
     }
 }
 
-impl<'a> fmt::Debug for String<'a> {
+impl fmt::Debug for String<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut f = f.debug_struct("String");
-        let bytes = unsafe { slice::from_raw_parts(self.chars as *const u8, self.length as usize) };
-        if let Ok(s) = std::str::from_utf8(bytes) {
-            f.field("chars", &s).finish()
+        let s = if self.length == 0 {
+            ""
         } else {
-            f.field("chars", &"<invalid UTF-8").finish()
-        }
+            let bytes =
+                unsafe { slice::from_raw_parts(self.chars as *const u8, self.length as usize) };
+            std::str::from_utf8(bytes).unwrap_or(&"<invalid UTF-8")
+        };
+        f.debug_struct("String").field("chars", &s).finish()
     }
 }
 

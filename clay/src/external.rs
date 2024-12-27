@@ -1,4 +1,6 @@
-use crate::clay::{Arena, ElementConfigType, ElementConfigUnion, RenderCommandArray};
+use crate::clay::{
+    Arena, ElementConfigType, ElementConfigUnion, RenderCommand, RenderCommandArray,
+};
 use crate::data;
 use crate::ui;
 use std::os::raw::c_void;
@@ -35,4 +37,8 @@ extern "C" {
         offset: u32,
         seed: u32,
     ) -> data::ElementId<'a>;
+    pub(crate) fn Clay_RenderCommandArray_Get<'a>(
+        array: &RenderCommandArray<'a>,
+        index: i32,
+    ) -> &'a RenderCommand<'a>;
 }
