@@ -4,6 +4,11 @@ use std::{
     os::raw::{c_char, c_float, c_int, c_void},
 };
 
+#[inline]
+pub fn default<T: Default>() -> T {
+    Default::default()
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ClayArray<'a, T> {
@@ -366,6 +371,17 @@ pub mod ui {
         }
     }
 
+    pub struct IdI<'a>(pub String<'a>, pub u32);
+
+    // CLAY_IDI
+    impl Configure for IdI<'_> {
+        fn configure(&self) {
+            unsafe {
+                Clay__AttachId(Clay__HashString(self.0, self.1, 0));
+            }
+        }
+    }
+
     #[repr(C)]
     #[derive(Copy, Clone, Default)]
     // Clay_LayoutConfig
@@ -406,7 +422,7 @@ pub mod ui {
     }
 
     #[repr(C)]
-    #[derive(Copy, Clone)]
+    #[derive(Copy, Clone, Default)]
     // Clay_TextElementConfig
     pub struct Text {
         pub text_color: Color,
@@ -418,16 +434,10 @@ pub mod ui {
         // CLAY_EXTEND_CONFIG_TEXT
     }
 
-    //XXX Text takes a String and a TextElementConfig
-    //XXX CLAY_TEXT(CLAY_STRING("FOO"), CLAY_TEXT_CONFIG({...}))
-    // #define CLAY_TEXT(text, textConfig) Clay__OpenTextElement(text, textConfig)
-    impl Configure for Text {
-        fn configure(&self) {
+    impl Text {
+        pub fn with(&self, text: String) {
             unsafe {
-                let config = ElementConfigUnion {
-                    text_element_config: Clay__StoreTextElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::Text);
+                Clay__OpenTextElement(text, Clay__StoreTextElementConfig(*self));
             }
         }
     }
@@ -546,7 +556,7 @@ pub mod ui {
                 right,
                 top,
                 bottom,
-                ..Default::default()
+                ..default()
             }
         }
         pub fn outside_radius(width: u32, color: Color, radius: f32) -> Self {
@@ -561,7 +571,7 @@ pub mod ui {
                     bottom_left: radius,
                     bottom_right: radius,
                 },
-                ..Default::default()
+                ..default()
             }
         }
         pub fn all(style: BorderStyle) -> Self {
@@ -571,7 +581,7 @@ pub mod ui {
                 top: style,
                 bottom: style,
                 between_children: style,
-                ..Default::default()
+                ..default()
             }
         }
         pub fn all_radius(width: u32, color: Color, radius: f32) -> Self {
@@ -601,6 +611,13 @@ pub mod ui {
             }
         }
     }
+
+    // XXX make this an Arena method, make Arena survive initialization
+    pub fn set_measure_text_callback(callback: MeasureTextCallback) {
+        unsafe {
+            Clay_SetMeasureTextFunction(callback);
+        }
+    }
 }
 
 #[packed_enum]
@@ -628,15 +645,20 @@ pub struct RenderCommand<'a> {
 
 pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
 
+pub type MeasureTextCallback = extern "C" fn(&String, &ui::Text) -> Dimensions;
+
 #[link(name = "clay")]
 extern "C" {
     fn Clay_MinMemorySize() -> u32;
     fn Clay_CreateArenaWithCapacityAndMemory<'a>(capacity: u32, offset: *const c_void)
         -> Arena<'a>;
     fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
+    //Clay_Dimensions (*measureTextFunction)(Clay_String *text, Clay_TextElementConfig *config)
+    fn Clay_SetMeasureTextFunction(measure: MeasureTextCallback);
     fn Clay_BeginLayout();
     fn Clay_EndLayout<'a>() -> RenderCommandArray<'a>;
     fn Clay__OpenElement();
+    fn Clay__OpenTextElement<'a>(text: String, config: &'a ui::Text);
     fn Clay__CloseElement();
     fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
     fn Clay__ElementPostConfiguration();
@@ -719,6 +741,14 @@ mod tests {
 
     #[test]
     fn simple_ui() {
+        extern "C" fn measure(text: &String, config: &ui::Text) -> Dimensions {
+            Dimensions {
+                width: (text.length * 10) as f32,
+                height: 18.,
+            }
+        }
+        ui::set_measure_text_callback(measure);
+
         let size: u32 = Arena::min_memory_size();
         let memory = vec![0u8; size as usize];
         let arena = Arena::new(&memory);
@@ -731,43 +761,49 @@ mod tests {
                 b: 100.,
                 a: 255.,
             };
+            const FONT_ID_BODY_24: u16 = 2;
 
             clay!((
-                ui::Id(String::from("HeroBlob")),
+                ui::IdI(String::from("HeroBlob"), 1),
                 ui::Layout {
                     sizing: Sizing {
                         width: SizingAxis::grow(0.0, 480.0),
-                        ..Default::default()
+                        ..default()
                     },
                     padding: Padding { x: 16, y: 16 },
                     child_gap: 16,
                     child_alignment: ChildAlignment {
                         y: LayoutAlignmentY::Center,
-                        ..Default::default()
+                        ..default()
                     },
-                    ..Default::default()
+                    ..default()
                 },
                 ui::Border::outside_radius(2, color, 10.0)
             ) {
                 clay!(
                     (
-                        ui::Id(String::from("CheckImage")), //XXX need CLAY_IDI
+                        ui::Id(String::from("CheckImage")),
                         ui::Layout {
-                            sizing: Sizing { width: SizingAxis::fixed(32.), ..Default::default() },
-                            ..Default::default()
+                            sizing: Sizing { width: SizingAxis::fixed(32.), ..default() },
+                            ..default()
                         },
-                        ui::Image { source_dimensions: Dimensions { width: 128., height: 128.}, ..Default::default() } // XXX need extended sourceUrl
+                        ui::Image { source_dimensions: Dimensions { width: 128., height: 128.}, ..default() } // XXX need extended sourceUrl
                     ) {
                         println!("children");
                     }
                 );
-                // XXX need CLAY_TEXT
-                // clay!(() {});
+                ui::Text {
+                    font_size: 18,
+                    font_id: FONT_ID_BODY_24,
+                    text_color: color,
+                    ..default()
+                }.with(String::from("Some text here"));
             });
             // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
             //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
             //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
             // }
         });
+        println!("done");
     }
 }
