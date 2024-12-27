@@ -1,4 +1,8 @@
-use crate::{data, external, ui};
+use crate::{
+    data,
+    external::{self, Clay_RenderCommandArray_Get},
+    ui,
+};
 use clay_macros::packed_enum;
 use std::{fmt, marker::PhantomData, os::raw::c_void};
 
@@ -14,6 +18,26 @@ pub struct ClayArray<'a, T> {
     length: u32,
     internal_array: *const T,
     _lifetime_marker: PhantomData<&'a T>,
+}
+
+pub struct ClayArrayIter<'a, T> {
+    array: ClayArray<'a, T>,
+    index: i32,
+    getter: unsafe extern "C" fn(&ClayArray<'a, T>, i32) -> &'a T,
+}
+
+impl<'a, T> Iterator for ClayArrayIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.array.length as i32 {
+            None
+        } else {
+            let item = unsafe { (self.getter)(&self.array, self.index) };
+            self.index += 1;
+            Some(item)
+        }
+    }
 }
 
 #[repr(C)]
@@ -106,7 +130,7 @@ pub struct RenderCommand<'a> {
     command_type: RenderCommandType,
 }
 
-impl<'a> fmt::Debug for RenderCommand<'a> {
+impl fmt::Debug for RenderCommand<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("RenderCommand")
             .field("bounding_box", &self.bounding_box)
@@ -133,6 +157,19 @@ impl<'a> fmt::Debug for RenderCommand<'a> {
 }
 
 pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
+pub type RenderCommandIter<'a> = ClayArrayIter<'a, RenderCommand<'a>>;
+impl<'a> IntoIterator for RenderCommandArray<'a> {
+    type Item = &'a RenderCommand<'a>;
+    type IntoIter = RenderCommandIter<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        RenderCommandIter {
+            array: self,
+            index: 0,
+            getter: Clay_RenderCommandArray_Get,
+        }
+    }
+}
 
 pub mod internal {
     use super::external;

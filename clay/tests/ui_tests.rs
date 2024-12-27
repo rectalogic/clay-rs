@@ -63,5 +63,7 @@ fn test_simple_ui() {
         //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
         // }
     });
-    println!("done");
+    for command in render_commands.into_iter() {
+        dbg!(command);
+    }
 }
