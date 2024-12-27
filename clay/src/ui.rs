@@ -1,4 +1,5 @@
-use crate::clay::{default, Configure, ElementConfigType, ElementConfigUnion};
+use crate::clay::internal::Configure;
+use crate::clay::{default, ElementConfigType, ElementConfigUnion};
 use crate::data;
 use crate::external;
 use std::os::raw::c_void;

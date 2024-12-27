@@ -8,7 +8,7 @@ pub fn default<T: Default>() -> T {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct ClayArray<'a, T> {
     capacity: u32,
     length: u32,
@@ -90,12 +90,8 @@ pub struct ScrollContainerData<'a> {
     found: bool,
 }
 
-pub trait Configure {
-    fn configure(&self);
-}
-
 #[packed_enum]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum RenderCommandType {
     None,
     Rectangle,
@@ -145,6 +141,10 @@ pub mod internal {
             }
         }
     }
+
+    pub trait Configure {
+        fn configure(&self);
+    }
 }
 
 #[macro_export]
@@ -152,7 +152,7 @@ macro_rules! clay {
     ( ( $( $expression:expr ),+ ) $( $children:block )? ) => {
         {
             let parent = $crate::internal::ParentElement::new();
-            $( $crate::Configure::configure(&$expression); )+
+            $( $crate::internal::Configure::configure(&$expression); )+
             parent.post_configuration();
             $( $children )?
         }
