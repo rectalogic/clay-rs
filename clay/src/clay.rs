@@ -1,8 +1,7 @@
+pub use crate::ui;
+use crate::{data, external};
 use clay_macros::packed_enum;
-use std::{
-    marker::PhantomData,
-    os::raw::{c_char, c_float, c_int, c_void},
-};
+use std::{marker::PhantomData, os::raw::c_void};
 
 #[inline]
 pub fn default<T: Default>() -> T {
@@ -19,29 +18,8 @@ pub struct ClayArray<'a, T> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
-pub struct String<'a> {
-    length: c_int,
-    chars: *const c_char,
-    _lifetime_marker: PhantomData<&'a c_char>,
-}
-
-impl<'a> From<&'a str> for String<'a> {
-    #[inline]
-    fn from(s: &'a str) -> String<'a> {
-        Self {
-            length: s.len() as c_int,
-            chars: s.as_ptr() as *const c_char,
-            _lifetime_marker: PhantomData,
-        }
-    }
-}
-
-type StringArray<'a> = ClayArray<'a, String<'a>>;
-
-#[repr(C)]
 pub struct Arena<'a> {
-    pub label: String<'a>,
+    pub label: data::String<'a>,
     next_allocation: u64,
     capacity: u64,
     memory: *mut c_void,
@@ -51,88 +29,30 @@ pub struct Arena<'a> {
 impl<'a> Arena<'a> {
     pub fn new(memory: &'a [u8]) -> Arena<'a> {
         unsafe {
-            Clay_CreateArenaWithCapacityAndMemory(
+            external::Clay_CreateArenaWithCapacityAndMemory(
                 memory.len() as u32,
                 memory.as_ptr() as *const c_void,
             )
         }
     }
     pub fn min_memory_size() -> u32 {
-        unsafe { Clay_MinMemorySize() }
+        unsafe { external::Clay_MinMemorySize() }
     }
-    pub fn initialize(self, layout_dimensions: Dimensions) {
-        unsafe { Clay_Initialize(self, layout_dimensions) }
+    pub fn initialize(self, layout_dimensions: data::Dimensions) {
+        unsafe { external::Clay_Initialize(self, layout_dimensions) }
     }
     pub fn render<F: FnOnce()>(ui: F) -> RenderCommandArray<'a> {
         unsafe {
-            Clay_BeginLayout();
+            external::Clay_BeginLayout();
         }
         ui();
-        unsafe { Clay_EndLayout() }
+        unsafe { external::Clay_EndLayout() }
     }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct Dimensions {
-    pub width: c_float,
-    pub height: c_float,
-}
-
-impl Dimensions {
-    pub fn new(width: f32, height: f32) -> Self {
-        Self { width, height }
-    }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct Vector2 {
-    pub x: c_float,
-    pub y: c_float,
-}
-
-// XXX can we make this (and some other structs) tuple structs? Color(0., 128, 255., 255.) - is tht same C layout?
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-// Clay_Color
-pub struct Color {
-    pub r: c_float,
-    pub g: c_float,
-    pub b: c_float,
-    pub a: c_float,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct BoundingBox {
-    pub x: c_float,
-    pub y: c_float,
-    pub width: c_float,
-    pub height: c_float,
-}
-
-#[repr(C)]
-#[derive(Clone)]
-pub struct ElementId<'a> {
-    id: u32,
-    offset: u32,
-    base_id: u32,
-    string_id: String<'a>,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct CornerRadius {
-    pub top_left: c_float,
-    pub top_right: c_float,
-    pub bottom_left: c_float,
-    pub bottom_right: c_float,
 }
 
 #[packed_enum]
 #[derive(Copy, Clone)]
-pub enum ElementConfigType {
+pub(crate) enum ElementConfigType {
     Rectangle = 1,
     BorderContainer = 2,
     FloatingContainer = 4,
@@ -142,198 +62,16 @@ pub enum ElementConfigType {
     Custom = 64,
 }
 
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-pub enum LayoutDirection {
-    #[default]
-    LeftToRight,
-    TopToBottom,
-}
-
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-pub enum LayoutAlignmentX {
-    #[default]
-    Left,
-    Right,
-    Center,
-}
-
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-pub enum LayoutAlignmentY {
-    #[default]
-    Top,
-    Bottom,
-    Center,
-}
-
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-pub enum SizingType {
-    #[default]
-    Fit,
-    Grow,
-    Percent,
-    Fixed,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct ChildAlignment {
-    pub x: LayoutAlignmentX,
-    pub y: LayoutAlignmentY,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct SizingMinMax {
-    pub min: c_float,
-    pub max: c_float,
-}
-
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union SizeUnion {
-    pub size_minmax: SizingMinMax,
-    pub size_percent: c_float,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct SizingAxis {
-    pub size: SizeUnion,
-    pub r#type: SizingType,
-}
-
-impl SizingAxis {
-    pub fn fit(min: f32, max: f32) -> Self {
-        SizingAxis {
-            r#type: SizingType::Fit,
-            size: SizeUnion {
-                size_minmax: SizingMinMax {
-                    min: min as c_float,
-                    max: max as c_float,
-                },
-            },
-        }
-    }
-    pub fn grow(min: f32, max: f32) -> Self {
-        SizingAxis {
-            r#type: SizingType::Grow,
-            size: SizeUnion {
-                size_minmax: SizingMinMax {
-                    min: min as c_float,
-                    max: max as c_float,
-                },
-            },
-        }
-    }
-    pub fn fixed(size: f32) -> Self {
-        SizingAxis {
-            r#type: SizingType::Fixed,
-            size: SizeUnion {
-                size_minmax: SizingMinMax {
-                    min: size as c_float,
-                    max: size as c_float,
-                },
-            },
-        }
-    }
-    pub fn percent(percent: f32) -> Self {
-        SizingAxis {
-            r#type: SizingType::Percent,
-            size: SizeUnion {
-                size_percent: percent as c_float,
-            },
-        }
-    }
-}
-impl Default for SizingAxis {
-    fn default() -> Self {
-        Self {
-            r#type: SizingType::Fit,
-            size: SizeUnion {
-                size_minmax: SizingMinMax::default(),
-            },
-        }
-    }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-// Clay_Sizing
-pub struct Sizing {
-    pub width: SizingAxis,
-    pub height: SizingAxis,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct Padding {
-    pub x: u16,
-    pub y: u16,
-}
-
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-// Clay_TextElementConfigWrapMode
-pub enum TextWrapMode {
-    #[default]
-    ClayTextWrapWords,
-    ClayTextWrapNewlines,
-    ClayTextWrapNone,
-}
-
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-pub enum FloatingAttachPointType {
-    #[default]
-    LeftTop,
-    LeftCenter,
-    LeftBottom,
-    CenterTop,
-    CenterCenter,
-    CenterBottom,
-    RightTop,
-    RightCenter,
-    RightBottom,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-pub struct FloatingAttachPoints {
-    pub element: FloatingAttachPointType,
-    pub parent: FloatingAttachPointType,
-}
-
-#[packed_enum]
-#[derive(Copy, Clone, Default)]
-pub enum PointerCaptureMode {
-    #[default]
-    Capture,
-    Passthrough,
-}
-
-#[repr(C)]
-#[derive(Copy, Clone, Default)]
-// Clay_Border
-pub struct BorderStyle {
-    pub width: u32,
-    pub color: Color,
-}
-
-// XXX figure this out
-#[repr(C)]
-#[derive(Copy, Clone)]
-union ElementConfigUnion<'a> {
-    rectangle_element_config: &'a ui::Rectangle,
-    text_element_config: &'a ui::Text,
-    image_element_config: &'a ui::Image,
-    floating_element_config: &'a ui::Floating,
-    custom_element_config: &'a ui::Custom,
-    scroll_element_config: &'a ui::Scroll,
-    border_element_config: &'a ui::Border,
+pub(crate) union ElementConfigUnion<'a> {
+    pub(crate) rectangle_element_config: &'a ui::Rectangle,
+    pub(crate) text_element_config: &'a ui::Text,
+    pub(crate) image_element_config: &'a ui::Image,
+    pub(crate) floating_element_config: &'a ui::Floating,
+    pub(crate) custom_element_config: &'a ui::Custom,
+    pub(crate) scroll_element_config: &'a ui::Scroll,
+    pub(crate) border_element_config: &'a ui::Border,
 }
 
 #[repr(C)]
@@ -346,278 +84,15 @@ struct ElementConfig<'a> {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ScrollContainerData<'a> {
-    scroll_position: &'a Vector2, // XXX
-    scroll_container_dimensions: Dimensions,
-    content_dimensions: Dimensions,
+    scroll_position: &'a data::Vector2, // XXX
+    scroll_container_dimensions: data::Dimensions,
+    content_dimensions: data::Dimensions,
     config: ui::Scroll,
     found: bool,
 }
 
-trait Configure {
+pub(crate) trait Configure {
     fn configure(&self);
-}
-
-pub mod ui {
-    use super::*;
-
-    pub struct Id<'a>(pub String<'a>);
-
-    // CLAY_ID
-    impl Configure for Id<'_> {
-        fn configure(&self) {
-            unsafe {
-                Clay__AttachId(Clay__HashString(self.0, 0, 0));
-            }
-        }
-    }
-
-    pub struct IdI<'a>(pub String<'a>, pub u32);
-
-    // CLAY_IDI
-    impl Configure for IdI<'_> {
-        fn configure(&self) {
-            unsafe {
-                Clay__AttachId(Clay__HashString(self.0, self.1, 0));
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone, Default)]
-    // Clay_LayoutConfig
-    pub struct Layout {
-        pub sizing: Sizing,
-        pub padding: Padding,
-        pub child_gap: u16,
-        pub child_alignment: ChildAlignment,
-        pub layout_direction: LayoutDirection,
-    }
-
-    impl Configure for Layout {
-        fn configure(&self) {
-            unsafe {
-                Clay__AttachLayoutConfig(Clay__StoreLayoutConfig(*self));
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone)]
-    // Clay_RectangleElementConfig
-    pub struct Rectangle {
-        pub color: Color,
-        pub corner_radius: CornerRadius,
-        // CLAY_EXTEND_CONFIG_RECTANGLE
-    }
-
-    impl Configure for Rectangle {
-        fn configure(&self) {
-            unsafe {
-                let config = ElementConfigUnion {
-                    rectangle_element_config: Clay__StoreRectangleElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::Rectangle);
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone, Default)]
-    // Clay_TextElementConfig
-    pub struct Text {
-        pub text_color: Color,
-        pub font_id: u16,
-        pub font_size: u16,
-        pub letter_spacing: u16,
-        pub line_height: u16,
-        pub wrap_mode: TextWrapMode,
-        // CLAY_EXTEND_CONFIG_TEXT
-    }
-
-    impl Text {
-        pub fn with(&self, text: String) {
-            unsafe {
-                Clay__OpenTextElement(text, Clay__StoreTextElementConfig(*self));
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone)]
-    // Clay_ImageElementConfig
-    pub struct Image {
-        pub image_data: *const c_void, // XXX fix
-        pub source_dimensions: Dimensions,
-        // CLAY_EXTEND_CONFIG_IMAGE
-    }
-
-    impl Default for Image {
-        fn default() -> Self {
-            Self {
-                image_data: std::ptr::null(),
-                source_dimensions: Dimensions::default(),
-            }
-        }
-    }
-
-    impl Configure for Image {
-        fn configure(&self) {
-            unsafe {
-                let config = ElementConfigUnion {
-                    image_element_config: Clay__StoreImageElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::Image);
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone)]
-    // Clay_FloatingElementConfig
-    pub struct Floating {
-        pub offset: Vector2,
-        pub expand: Dimensions,
-        pub z_index: u16,
-        pub parent_id: u32,
-        pub attachment: FloatingAttachPoints,
-        pub pointer_capture_mode: PointerCaptureMode,
-    }
-
-    impl Configure for Floating {
-        fn configure(&self) {
-            unsafe {
-                let config = ElementConfigUnion {
-                    floating_element_config: Clay__StoreFloatingElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::FloatingContainer);
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone)]
-    // Clay_CustomElementConfig
-    pub struct Custom {
-        custom_data: *const c_void,
-        // CLAY_EXTEND_CONFIG_CUSTOM
-    }
-
-    impl Configure for Custom {
-        fn configure(&self) {
-            unsafe {
-                let config = ElementConfigUnion {
-                    custom_element_config: Clay__StoreCustomElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::Custom);
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone)]
-    // Clay_ScrollElementConfig
-    pub struct Scroll {
-        pub horizontal: bool,
-        pub vertical: bool,
-    }
-
-    impl Configure for Scroll {
-        fn configure(&self) {
-            unsafe {
-                let config = ElementConfigUnion {
-                    scroll_element_config: Clay__StoreScrollElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::ScrollContainer);
-            }
-        }
-    }
-
-    #[repr(C)]
-    #[derive(Copy, Clone, Default)]
-    // Clay_BorderElementConfig
-    pub struct Border {
-        pub left: BorderStyle,
-        pub right: BorderStyle,
-        pub top: BorderStyle,
-        pub bottom: BorderStyle,
-        pub between_children: BorderStyle,
-        pub corner_radius: CornerRadius,
-    }
-
-    impl Border {
-        pub fn outside(
-            left: BorderStyle,
-            right: BorderStyle,
-            top: BorderStyle,
-            bottom: BorderStyle,
-        ) -> Self {
-            Self {
-                left,
-                right,
-                top,
-                bottom,
-                ..default()
-            }
-        }
-        pub fn outside_radius(width: u32, color: Color, radius: f32) -> Self {
-            Self {
-                left: BorderStyle { width, color },
-                right: BorderStyle { width, color },
-                top: BorderStyle { width, color },
-                bottom: BorderStyle { width, color },
-                corner_radius: CornerRadius {
-                    top_left: radius,
-                    top_right: radius,
-                    bottom_left: radius,
-                    bottom_right: radius,
-                },
-                ..default()
-            }
-        }
-        pub fn all(style: BorderStyle) -> Self {
-            Self {
-                left: style,
-                right: style,
-                top: style,
-                bottom: style,
-                between_children: style,
-                ..default()
-            }
-        }
-        pub fn all_radius(width: u32, color: Color, radius: f32) -> Self {
-            let style = BorderStyle { width, color };
-            Self {
-                left: style,
-                right: style,
-                top: style,
-                bottom: style,
-                between_children: style,
-                corner_radius: CornerRadius {
-                    top_left: radius,
-                    top_right: radius,
-                    bottom_left: radius,
-                    bottom_right: radius,
-                },
-            }
-        }
-    }
-    impl Configure for Border {
-        fn configure(&self) {
-            unsafe {
-                let config = ElementConfigUnion {
-                    border_element_config: Clay__StoreBorderElementConfig(*self),
-                };
-                Clay__AttachElementConfig(config, ElementConfigType::BorderContainer);
-            }
-        }
-    }
-
-    // XXX make this an Arena method, make Arena survive initialization
-    pub fn set_measure_text_callback(callback: MeasureTextCallback) {
-        unsafe {
-            Clay_SetMeasureTextFunction(callback);
-        }
-    }
 }
 
 #[packed_enum]
@@ -636,51 +111,21 @@ pub enum RenderCommandType {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct RenderCommand<'a> {
-    bounding_box: BoundingBox,
+    bounding_box: data::BoundingBox,
     config: ElementConfigUnion<'a>,
-    text: String<'a>, // XXX fix
+    text: data::String<'a>, // XXX fix
     id: u32,
     command_type: RenderCommandType,
 }
 
 pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
 
-pub type MeasureTextCallback = extern "C" fn(&String, &ui::Text) -> Dimensions;
-
-#[link(name = "clay")]
-extern "C" {
-    fn Clay_MinMemorySize() -> u32;
-    fn Clay_CreateArenaWithCapacityAndMemory<'a>(capacity: u32, offset: *const c_void)
-        -> Arena<'a>;
-    fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
-    //Clay_Dimensions (*measureTextFunction)(Clay_String *text, Clay_TextElementConfig *config)
-    fn Clay_SetMeasureTextFunction(measure: MeasureTextCallback);
-    fn Clay_BeginLayout();
-    fn Clay_EndLayout<'a>() -> RenderCommandArray<'a>;
-    fn Clay__OpenElement();
-    fn Clay__OpenTextElement<'a>(text: String, config: &'a ui::Text);
-    fn Clay__CloseElement();
-    fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
-    fn Clay__ElementPostConfiguration();
-    fn Clay__AttachId(id: ElementId);
-    fn Clay__AttachLayoutConfig<'a>(config: &'a ui::Layout);
-    fn Clay__AttachElementConfig(config: ElementConfigUnion, r#type: ElementConfigType);
-    fn Clay__StoreRectangleElementConfig<'a>(config: ui::Rectangle) -> &'a ui::Rectangle;
-    fn Clay__StoreTextElementConfig<'a>(config: ui::Text) -> &'a ui::Text;
-    fn Clay__StoreImageElementConfig<'a>(config: ui::Image) -> &'a ui::Image;
-    fn Clay__StoreFloatingElementConfig<'a>(config: ui::Floating) -> &'a ui::Floating;
-    fn Clay__StoreCustomElementConfig<'a>(config: ui::Custom) -> &'a ui::Custom;
-    fn Clay__StoreScrollElementConfig<'a>(config: ui::Scroll) -> &'a ui::Scroll;
-    fn Clay__StoreBorderElementConfig<'a>(config: ui::Border) -> &'a ui::Border;
-    fn Clay__HashString(key: String, offset: u32, seed: u32) -> ElementId;
-}
-
 struct ParentElement;
 
 impl ParentElement {
     fn new() -> Self {
         unsafe {
-            Clay__OpenElement();
+            external::Clay__OpenElement();
         }
         Self
     }
@@ -689,7 +134,7 @@ impl ParentElement {
 impl Drop for ParentElement {
     fn drop(&mut self) {
         unsafe {
-            Clay__CloseElement();
+            external::Clay__CloseElement();
         }
     }
 }
@@ -700,7 +145,7 @@ macro_rules! clay {
         {
             let _parent = ParentElement::new();
             $( $expression.configure(); )+
-            unsafe { Clay__ElementPostConfiguration() ; }
+            unsafe { external::Clay__ElementPostConfiguration() ; }
             $( $children )?
         }
     };
@@ -723,7 +168,7 @@ mod tests {
         let memory = vec![0u8; size as usize];
         let arena = Arena::new(&memory);
         assert_eq!(arena.capacity, memory.len() as u64);
-        let dimensions = Dimensions::new(300.0, 300.0);
+        let dimensions = data::Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
     }
 
@@ -734,16 +179,16 @@ mod tests {
         let mut arena = Arena::new(&memory);
         arena.label = "Main Arena".into();
         assert_eq!(arena.capacity, memory.len() as u64);
-        let dimensions = Dimensions::new(300.0, 300.0);
+        let dimensions = data::Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
         // XXX assert on label
     }
 
     #[test]
     fn simple_ui() {
-        extern "C" fn measure(text: &String, config: &ui::Text) -> Dimensions {
-            Dimensions {
-                width: (text.length * 10) as f32,
+        extern "C" fn measure(text: &data::String, config: &ui::Text) -> data::Dimensions {
+            data::Dimensions {
+                width: (text.len() * 10) as f32,
                 height: 18.,
             }
         }
@@ -752,10 +197,10 @@ mod tests {
         let size: u32 = Arena::min_memory_size();
         let memory = vec![0u8; size as usize];
         let arena = Arena::new(&memory);
-        let dimensions = Dimensions::new(300.0, 300.0);
+        let dimensions = data::Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions);
         let render_commands = Arena::render(|| {
-            let color = Color {
+            let color = data::Color {
                 r: 240.,
                 g: 189.,
                 b: 100.,
@@ -764,16 +209,16 @@ mod tests {
             const FONT_ID_BODY_24: u16 = 2;
 
             clay!((
-                ui::IdI(String::from("HeroBlob"), 1),
+                ui::IdI(data::String::from("HeroBlob"), 1),
                 ui::Layout {
-                    sizing: Sizing {
-                        width: SizingAxis::grow(0.0, 480.0),
+                    sizing: data::Sizing {
+                        width: data::SizingAxis::grow(0.0, 480.0),
                         ..default()
                     },
-                    padding: Padding { x: 16, y: 16 },
+                    padding: data::Padding { x: 16, y: 16 },
                     child_gap: 16,
-                    child_alignment: ChildAlignment {
-                        y: LayoutAlignmentY::Center,
+                    child_alignment: data::ChildAlignment {
+                        y: data::LayoutAlignmentY::Center,
                         ..default()
                     },
                     ..default()
@@ -782,12 +227,12 @@ mod tests {
             ) {
                 clay!(
                     (
-                        ui::Id(String::from("CheckImage")),
+                        ui::Id(data::String::from("CheckImage")),
                         ui::Layout {
-                            sizing: Sizing { width: SizingAxis::fixed(32.), ..default() },
+                            sizing: data::Sizing { width: data::SizingAxis::fixed(32.), ..default() },
                             ..default()
                         },
-                        ui::Image { source_dimensions: Dimensions { width: 128., height: 128.}, ..default() } // XXX need extended sourceUrl
+                        ui::Image { source_dimensions: data::Dimensions { width: 128., height: 128.}, ..default() } // XXX need extended sourceUrl
                     ) {
                         println!("children");
                     }
@@ -797,7 +242,7 @@ mod tests {
                     font_id: FONT_ID_BODY_24,
                     text_color: color,
                     ..default()
-                }.with(String::from("Some text here"));
+                }.with(data::String::from("Some text here"));
             });
             // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
             //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
