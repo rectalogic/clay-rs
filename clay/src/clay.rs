@@ -56,8 +56,14 @@ impl<'a> Arena<'a> {
         unsafe { Clay_MinMemorySize() }
     }
     pub fn initialize(self, layout_dimensions: Dimensions) {
-        // XXX I think this consumes then frees arena, nothing hangs onto it - need a reference
         unsafe { Clay_Initialize(self, layout_dimensions) }
+    }
+    pub fn render<F: FnOnce()>(ui: F) -> RenderCommandArray<'a> {
+        unsafe {
+            Clay_BeginLayout();
+        }
+        ui();
+        unsafe { Clay_EndLayout() }
     }
 }
 
@@ -611,7 +617,7 @@ pub enum RenderCommandType {
 }
 
 #[repr(C)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct RenderCommand<'a> {
     bounding_box: BoundingBox,
     config: ElementConfigUnion<'a>,
@@ -629,6 +635,7 @@ extern "C" {
         -> Arena<'a>;
     fn Clay_Initialize(arena: Arena, layout_dimensions: Dimensions);
     fn Clay_BeginLayout();
+    fn Clay_EndLayout<'a>() -> RenderCommandArray<'a>;
     fn Clay__OpenElement();
     fn Clay__CloseElement();
     fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
@@ -714,51 +721,55 @@ mod tests {
 
     #[test]
     fn simple_ui() {
-        unsafe {
-            Clay_BeginLayout(); // XXX wrap this and end into something safer? can clay! macro check if we are in a layout?
-        }
-        let color = Color {
-            r: 240.,
-            g: 189.,
-            b: 100.,
-            a: 255.,
-        };
+        let size: u32 = Arena::min_memory_size();
+        let memory = vec![0u8; size as usize];
+        let arena = Arena::new(&memory);
+        let dimensions = Dimensions::new(300.0, 300.0);
+        arena.initialize(dimensions);
+        let render_commands = Arena::render(|| {
+            let color = Color {
+                r: 240.,
+                g: 189.,
+                b: 100.,
+                a: 255.,
+            };
 
-        clay!((
-            ui::Id(String::from("HeroBlob")),
-            ui::Layout {
-                sizing: Sizing {
-                    width: SizingAxis::grow(0.0, 480.0),
-                    ..Default::default()
-                },
-                padding: Padding { x: 16, y: 16 },
-                child_gap: 16,
-                child_alignment: ChildAlignment {
-                    y: LayoutAlignmentY::Center,
-                    ..Default::default()
-                },
-                ..Default::default()
-            },
-            ui::Border::outside_radius(2, color, 10.0)
-        ) {
-            clay!(
-                (
-                    ui::Id(String::from("CheckImage")), //XXX need CLAY_IDI
-                    ui::Layout {
-                        sizing: Sizing { width: SizingAxis::fixed(32.), ..Default::default() },
+            clay!((
+                ui::Id(String::from("HeroBlob")),
+                ui::Layout {
+                    sizing: Sizing {
+                        width: SizingAxis::grow(0.0, 480.0),
                         ..Default::default()
                     },
-                    ui::Image { source_dimensions: Dimensions { width: 128., height: 128.}, ..Default::default() } // XXX need extended sourceUrl
-                ) {
-                    println!("children");
-                }
-            );
-            // XXX need CLAY_TEXT
-            // clay!(() {});
+                    padding: Padding { x: 16, y: 16 },
+                    child_gap: 16,
+                    child_alignment: ChildAlignment {
+                        y: LayoutAlignmentY::Center,
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                },
+                ui::Border::outside_radius(2, color, 10.0)
+            ) {
+                clay!(
+                    (
+                        ui::Id(String::from("CheckImage")), //XXX need CLAY_IDI
+                        ui::Layout {
+                            sizing: Sizing { width: SizingAxis::fixed(32.), ..Default::default() },
+                            ..Default::default()
+                        },
+                        ui::Image { source_dimensions: Dimensions { width: 128., height: 128.}, ..Default::default() } // XXX need extended sourceUrl
+                    ) {
+                        println!("children");
+                    }
+                );
+                // XXX need CLAY_TEXT
+                // clay!(() {});
+            });
+            // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
+            //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
+            //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
+            // }
         });
-        // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
-        //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
-        //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
-        // }
     }
 }
