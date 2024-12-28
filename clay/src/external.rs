@@ -4,7 +4,7 @@ use crate::arena::{
 };
 use crate::data;
 use crate::ui;
-use std::os::raw::c_void;
+use std::os::raw::{c_float, c_int, c_void};
 
 #[link(name = "clay")]
 extern "C" {
@@ -18,7 +18,25 @@ extern "C" {
         layout_dimensions: data::Dimensions,
         error_handler: ErrorHandler,
     );
-    pub(crate) fn Clay__ErrorHandlerFunctionDefault<'a>(error_text: ErrorData<'a>);
+    pub(crate) fn Clay_SetPointerState(position: data::Vector2, pointer_down: bool);
+    pub(crate) fn Clay_UpdateScrollContainers(
+        enable_drag_scrolling: bool,
+        scroll_delta: data::Vector2,
+        delta_time: c_float,
+    );
+
+    pub(crate) fn Clay_Hovered() -> bool;
+    pub(crate) fn Clay_OnHover(on_hover_callback: data::OnHoverCallback, user_data: *const c_int);
+    pub(crate) fn Clay_PointerOver(element_id: data::ElementId) -> bool;
+    pub(crate) fn Clay_GetScrollContainerData(id: data::ElementId) -> data::ScrollContainerData;
+    pub(crate) fn Clay_SetQueryScrollOffsetFunction(
+        query_scroll_offset_callback: data::QueryScrollOffsetCallback,
+    );
+    pub(crate) fn Clay_SetCullingEnabled(enabled: bool);
+    pub(crate) fn Clay_SetMaxElementCount(max_element_count: u32);
+    pub(crate) fn Clay_SetMaxMeasureTextCacheWordCount(max_measure_text_cache_word_count: u32);
+
+    pub(crate) fn Clay__ErrorHandlerFunctionDefault(error_text: ErrorData);
     pub(crate) fn Clay_SetMeasureTextFunction(measure: MeasureTextCallback);
     pub(crate) fn Clay_BeginLayout();
     pub(crate) fn Clay_EndLayout<'a>() -> RenderCommandArray<'a>;

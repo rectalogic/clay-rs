@@ -7,13 +7,14 @@ use clay_macros::packed_enum;
 use std::{
     fmt,
     marker::PhantomData,
-    os::raw::{c_int, c_void},
+    os::raw::{c_float, c_int, c_void},
 };
 
-pub type MeasureTextCallback = extern "C" fn(&data::String, &ui::Text) -> data::Dimensions;
+pub type MeasureTextCallback = fn(&data::String, &ui::Text) -> data::Dimensions;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+// clay: Clay_ErrorType
 pub enum ErrorType {
     TextMeasurementFunctionNotProvided,
     ArenaCapacityExceeded,
@@ -24,10 +25,11 @@ pub enum ErrorType {
     InternalError,
 }
 
-pub type ErrorHandlerCallback<'a> = unsafe extern "C" fn(ErrorData<'a>);
+pub type ErrorHandlerCallback<'a> = fn(ErrorData<'a>);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+// clay: Clay_ErrorData
 pub struct ErrorData<'a> {
     error_type: ErrorType,
     error_text: data::String<'a>,
@@ -36,21 +38,30 @@ pub struct ErrorData<'a> {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+// clay: Clay_ErrorHandler
 pub struct ErrorHandler<'a> {
     error_handler_callback: ErrorHandlerCallback<'a>,
     user_data: *const c_int,
 }
 
+fn default_error_handler<'a>(error_data: ErrorData<'a>) {
+    unsafe {
+        external::Clay__ErrorHandlerFunctionDefault(error_data);
+    }
+}
+
 impl Default for ErrorHandler<'_> {
     fn default() -> Self {
         Self {
-            error_handler_callback: external::Clay__ErrorHandlerFunctionDefault,
+            error_handler_callback: default_error_handler,
             user_data: std::ptr::null(),
         }
     }
 }
 
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+// clay: Clay_Arena
 pub struct Arena<'a> {
     next_allocation: u64,
     capacity: u64,
@@ -59,6 +70,7 @@ pub struct Arena<'a> {
 }
 
 impl<'a> Arena<'a> {
+    // clay: Clay_CreateArenaWithCapacityAndMemory
     pub fn new(memory: &'a [u8]) -> Arena<'a> {
         unsafe {
             external::Clay_CreateArenaWithCapacityAndMemory(
@@ -67,19 +79,55 @@ impl<'a> Arena<'a> {
             )
         }
     }
+    // clay: Clay_MinMemorySize
     pub fn min_memory_size() -> u32 {
         unsafe { external::Clay_MinMemorySize() }
     }
+    // clay: Clay_SetMaxElementCount
+    pub fn set_max_element_count(max_element_count: u32) {
+        unsafe {
+            external::Clay_SetMaxElementCount(max_element_count);
+        }
+    }
+    // clay: Clay_SetMaxMeasureTextCacheWordCount
+    pub fn set_max_measure_text_cache_word_count(max_measure_text_cache_word_count: u32) {
+        unsafe {
+            external::Clay_SetMaxMeasureTextCacheWordCount(max_measure_text_cache_word_count);
+        }
+    }
+    // clay: Clay_Initialize
     pub fn initialize(self, layout_dimensions: data::Dimensions, error_handler: ErrorHandler) {
         unsafe { external::Clay_Initialize(self, layout_dimensions, error_handler) }
     }
-    // XXX make this an Arena method, make Arena survive initialization
-    pub fn set_measure_text_callback(callback: MeasureTextCallback) {
+    // clay: Clay_SetMeasureTextFunction
+    pub fn set_measure_text_callback(&self, callback: MeasureTextCallback) {
         unsafe {
             external::Clay_SetMeasureTextFunction(callback);
         }
     }
-    pub fn render<F: FnOnce()>(ui: F) -> RenderCommandArray<'a> {
+    // clay: Clay_SetPointerState
+    pub fn set_pointer_state(position: data::Vector2, pointer_down: bool) {
+        unsafe {
+            external::Clay_SetPointerState(position, pointer_down);
+        }
+    }
+    // clay: Clay_UpdateScrollContainers
+    pub fn update_scroll_containers(
+        enable_drag_scrolling: bool,
+        scroll_delta: data::Vector2,
+        delta_time: f32,
+    ) {
+        unsafe {
+            external::Clay_UpdateScrollContainers(
+                enable_drag_scrolling,
+                scroll_delta,
+                delta_time as c_float,
+            );
+        }
+    }
+
+    // clay: Clay_BeginLayout/Clay_EndLayout
+    pub fn render<F: FnOnce()>(&self, ui: F) -> RenderCommandArray<'a> {
         unsafe {
             external::Clay_BeginLayout();
         }
@@ -90,6 +138,7 @@ impl<'a> Arena<'a> {
 
 #[packed_enum]
 #[derive(Copy, Clone)]
+// clay: Clay__ElementConfigType
 pub(crate) enum ElementConfigType {
     Rectangle = 1,
     BorderContainer = 2,
@@ -102,6 +151,7 @@ pub(crate) enum ElementConfigType {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
+// clay: Clay_ElementConfigUnion
 pub(crate) union ElementConfigUnion<'a> {
     pub(crate) rectangle_element_config: &'a ui::Rectangle,
     pub(crate) text_element_config: &'a ui::Text,
@@ -113,17 +163,8 @@ pub(crate) union ElementConfigUnion<'a> {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
-pub struct ScrollContainerData<'a> {
-    scroll_position: &'a data::Vector2,
-    scroll_container_dimensions: data::Dimensions,
-    content_dimensions: data::Dimensions,
-    config: ui::Scroll,
-    found: bool,
-}
-
-#[repr(C)]
 #[derive(Debug, Copy, Clone)]
+// clay: Clay_RenderCommandType
 pub enum RenderCommandType {
     None,
     Rectangle,
@@ -137,6 +178,7 @@ pub enum RenderCommandType {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
+// clay: Clay_RenderCommand
 pub struct RenderCommand<'a> {
     bounding_box: data::BoundingBox,
     config: ElementConfigUnion<'a>,
@@ -171,6 +213,7 @@ impl fmt::Debug for RenderCommand<'_> {
     }
 }
 
+// clay: Clay_RenderCommandArray
 pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
 pub type RenderCommandIter<'a> = ClayArrayIter<'a, RenderCommand<'a>>;
 impl<'a> IntoIterator for RenderCommandArray<'a> {
@@ -218,6 +261,7 @@ pub mod internal {
     }
 }
 
+// clay: CLAY macro
 #[macro_export]
 macro_rules! clay {
     ( ( $( $expression:expr ),+ ) $( $children:block )? ) => {

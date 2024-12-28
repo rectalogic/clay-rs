@@ -1,19 +1,19 @@
 #[test]
 fn test_simple_ui() {
-    extern "C" fn measure(text: &clay::String, config: &clay::Text) -> clay::Dimensions {
+    fn measure(text: &clay::String, config: &clay::Text) -> clay::Dimensions {
         clay::Dimensions {
             width: (text.len() * 10) as f32,
-            height: 18.,
+            height: config.font_size as f32,
         }
     }
-    clay::Arena::set_measure_text_callback(measure);
 
     let size: u32 = clay::Arena::min_memory_size();
     let memory = vec![0u8; size as usize];
     let arena = clay::Arena::new(&memory);
+    arena.set_measure_text_callback(measure);
     let dimensions = clay::Dimensions::new(300.0, 300.0);
     arena.initialize(dimensions, clay::default());
-    let render_commands = clay::Arena::render(|| {
+    let render_commands = arena.render(|| {
         let color = clay::Color {
             r: 240.,
             g: 189.,
