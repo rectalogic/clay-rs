@@ -159,8 +159,8 @@ pub struct SizingMinMax {
 #[repr(C)]
 #[derive(Copy, Clone)]
 union SizeUnion {
-    size_minmax: SizingMinMax,
-    size_percent: c_float,
+    minmax: SizingMinMax,
+    percent: c_float,
 }
 
 #[repr(C)]
@@ -175,7 +175,7 @@ impl SizingAxis {
         SizingAxis {
             r#type: SizingType::Fit,
             size: SizeUnion {
-                size_minmax: SizingMinMax {
+                minmax: SizingMinMax {
                     min: min as c_float,
                     max: max as c_float,
                 },
@@ -186,7 +186,7 @@ impl SizingAxis {
         SizingAxis {
             r#type: SizingType::Grow,
             size: SizeUnion {
-                size_minmax: SizingMinMax {
+                minmax: SizingMinMax {
                     min: min as c_float,
                     max: max as c_float,
                 },
@@ -197,7 +197,7 @@ impl SizingAxis {
         SizingAxis {
             r#type: SizingType::Fixed,
             size: SizeUnion {
-                size_minmax: SizingMinMax {
+                minmax: SizingMinMax {
                     min: size as c_float,
                     max: size as c_float,
                 },
@@ -208,7 +208,7 @@ impl SizingAxis {
         SizingAxis {
             r#type: SizingType::Percent,
             size: SizeUnion {
-                size_percent: percent as c_float,
+                percent: percent as c_float,
             },
         }
     }
@@ -219,7 +219,7 @@ impl Default for SizingAxis {
         Self {
             r#type: SizingType::Fit,
             size: SizeUnion {
-                size_minmax: SizingMinMax::default(),
+                minmax: SizingMinMax::default(),
             },
         }
     }
@@ -232,8 +232,8 @@ impl fmt::Debug for SizingAxis {
             .field(
                 "size",
                 match self.r#type {
-                    SizingType::Percent => unsafe { &self.size.size_percent },
-                    _ => unsafe { &self.size.size_minmax },
+                    SizingType::Percent => unsafe { &self.size.percent },
+                    _ => unsafe { &self.size.minmax },
                 },
             )
             .finish()
@@ -255,7 +255,7 @@ pub struct Padding {
     pub y: u16,
 }
 
-#[packed_enum]
+#[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
 // Clay_TextElementConfigWrapMode
 pub enum TextWrapMode {
@@ -287,7 +287,7 @@ pub struct FloatingAttachPoints {
     pub parent: FloatingAttachPointType,
 }
 
-#[packed_enum]
+#[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
 pub enum PointerCaptureMode {
     #[default]

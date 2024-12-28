@@ -1,5 +1,6 @@
 use crate::clay::{
-    Arena, ElementConfigType, ElementConfigUnion, RenderCommand, RenderCommandArray,
+    Arena, ElementConfigType, ElementConfigUnion, ErrorData, ErrorHandler, MeasureTextCallback,
+    RenderCommand, RenderCommandArray,
 };
 use crate::data;
 use crate::ui;
@@ -12,8 +13,13 @@ extern "C" {
         capacity: u32,
         offset: *const c_void,
     ) -> Arena<'a>;
-    pub(crate) fn Clay_Initialize(arena: Arena, layout_dimensions: data::Dimensions);
-    pub(crate) fn Clay_SetMeasureTextFunction(measure: ui::MeasureTextCallback);
+    pub(crate) fn Clay_Initialize(
+        arena: Arena,
+        layout_dimensions: data::Dimensions,
+        error_handler: ErrorHandler,
+    );
+    pub(crate) fn Clay__ErrorHandlerFunctionDefault<'a>(error_text: ErrorData<'a>);
+    pub(crate) fn Clay_SetMeasureTextFunction(measure: MeasureTextCallback);
     pub(crate) fn Clay_BeginLayout();
     pub(crate) fn Clay_EndLayout<'a>() -> RenderCommandArray<'a>;
     pub(crate) fn Clay__OpenElement();
