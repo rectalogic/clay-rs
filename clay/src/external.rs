@@ -1,8 +1,8 @@
-use crate::arena::{
+use crate::data;
+use crate::system::{
     Arena, ElementConfigType, ElementConfigUnion, ErrorData, ErrorHandler, MeasureTextCallback,
     RenderCommand, RenderCommandArray,
 };
-use crate::data;
 use crate::ui;
 use std::os::raw::{c_float, c_int, c_void};
 

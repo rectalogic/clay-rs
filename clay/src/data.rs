@@ -144,8 +144,8 @@ pub struct PointerData {
     state: PointerDataInteractionState,
 }
 
-pub type OnHoverCallback = fn(ElementId, PointerData, *const c_int);
-pub type QueryScrollOffsetCallback = fn(u32) -> Vector2;
+pub type OnHoverCallback = extern "C" fn(ElementId, PointerData, *const c_int);
+pub type QueryScrollOffsetCallback = extern "C" fn(u32) -> Vector2;
 
 #[repr(C)]
 #[derive(Copy, Clone)]

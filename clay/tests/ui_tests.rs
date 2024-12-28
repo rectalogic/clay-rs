@@ -1,6 +1,6 @@
 #[test]
 fn test_simple_ui() {
-    fn measure(text: &clay::String, config: &clay::Text) -> clay::Dimensions {
+    extern "C" fn measure(text: &clay::String, config: &clay::Text) -> clay::Dimensions {
         clay::Dimensions {
             width: (text.len() * 10) as f32,
             height: config.font_size as f32,

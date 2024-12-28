@@ -1,7 +1,6 @@
-use crate::arena::internal::Configure;
-use crate::arena::{ElementConfigType, ElementConfigUnion};
 use crate::data;
 use crate::external;
+use crate::system::{internal::Configure, ElementConfigType, ElementConfigUnion};
 use std::os::raw::c_void;
 
 #[derive(Debug, Copy, Clone)]

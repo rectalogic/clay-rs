@@ -10,7 +10,7 @@ use std::{
     os::raw::{c_float, c_int, c_void},
 };
 
-pub type MeasureTextCallback = fn(&data::String, &ui::Text) -> data::Dimensions;
+pub type MeasureTextCallback = extern "C" fn(&data::String, &ui::Text) -> data::Dimensions;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -25,7 +25,7 @@ pub enum ErrorType {
     InternalError,
 }
 
-pub type ErrorHandlerCallback<'a> = fn(ErrorData<'a>);
+pub type ErrorHandlerCallback<'a> = extern "C" fn(ErrorData<'a>);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -44,7 +44,7 @@ pub struct ErrorHandler<'a> {
     user_data: *const c_int,
 }
 
-fn default_error_handler<'a>(error_data: ErrorData<'a>) {
+extern "C" fn default_error_handler(error_data: ErrorData<'_>) {
     unsafe {
         external::Clay__ErrorHandlerFunctionDefault(error_data);
     }
