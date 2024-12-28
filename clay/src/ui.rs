@@ -1,5 +1,5 @@
-use crate::clay::internal::Configure;
-use crate::clay::{default, ElementConfigType, ElementConfigUnion};
+use crate::arena::internal::Configure;
+use crate::arena::{ElementConfigType, ElementConfigUnion};
 use crate::data;
 use crate::external;
 use std::os::raw::c_void;
@@ -202,7 +202,7 @@ impl Border {
             right,
             top,
             bottom,
-            ..default()
+            ..data::default()
         }
     }
     pub fn outside_radius(width: u32, color: data::Color, radius: f32) -> Self {
@@ -217,7 +217,7 @@ impl Border {
                 bottom_left: radius,
                 bottom_right: radius,
             },
-            ..default()
+            ..data::default()
         }
     }
     pub fn all(style: data::BorderStyle) -> Self {
@@ -227,7 +227,7 @@ impl Border {
             top: style,
             bottom: style,
             between_children: style,
-            ..default()
+            ..data::default()
         }
     }
     pub fn all_radius(width: u32, color: data::Color, radius: f32) -> Self {

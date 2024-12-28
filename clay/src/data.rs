@@ -1,4 +1,3 @@
-use crate::clay::ClayArray;
 use clay_macros::packed_enum;
 use core::slice;
 use std::{
@@ -6,6 +5,40 @@ use std::{
     marker::PhantomData,
     os::raw::{c_char, c_float, c_int},
 };
+
+#[inline]
+pub fn default<T: Default>() -> T {
+    Default::default()
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ClayArray<'a, T> {
+    capacity: u32,
+    length: u32,
+    internal_array: *const T,
+    _lifetime_marker: PhantomData<&'a T>,
+}
+
+pub struct ClayArrayIter<'a, T> {
+    pub(crate) array: ClayArray<'a, T>,
+    pub(crate) index: i32,
+    pub(crate) getter: unsafe extern "C" fn(&ClayArray<'a, T>, i32) -> &'a T,
+}
+
+impl<'a, T> Iterator for ClayArrayIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.array.length as i32 {
+            None
+        } else {
+            let item = unsafe { (self.getter)(&self.array, self.index) };
+            self.index += 1;
+            Some(item)
+        }
+    }
+}
 
 #[repr(C)]
 #[derive(Copy, Clone)]

@@ -1,7 +1,7 @@
 use crate::{
     data,
     external::{self, Clay_RenderCommandArray_Get},
-    ui,
+    ui, ClayArray, ClayArrayIter,
 };
 use clay_macros::packed_enum;
 use std::{
@@ -9,40 +9,6 @@ use std::{
     marker::PhantomData,
     os::raw::{c_int, c_void},
 };
-
-#[inline]
-pub fn default<T: Default>() -> T {
-    Default::default()
-}
-
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct ClayArray<'a, T> {
-    capacity: u32,
-    length: u32,
-    internal_array: *const T,
-    _lifetime_marker: PhantomData<&'a T>,
-}
-
-pub struct ClayArrayIter<'a, T> {
-    array: ClayArray<'a, T>,
-    index: i32,
-    getter: unsafe extern "C" fn(&ClayArray<'a, T>, i32) -> &'a T,
-}
-
-impl<'a, T> Iterator for ClayArrayIter<'a, T> {
-    type Item = &'a T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.index >= self.array.length as i32 {
-            None
-        } else {
-            let item = unsafe { (self.getter)(&self.array, self.index) };
-            self.index += 1;
-            Some(item)
-        }
-    }
-}
 
 pub type MeasureTextCallback = extern "C" fn(&data::String, &ui::Text) -> data::Dimensions;
 
@@ -282,6 +248,6 @@ mod tests {
         let arena = Arena::new(&memory);
         assert_eq!(arena.capacity, memory.len() as u64);
         let dimensions = data::Dimensions::new(300.0, 300.0);
-        arena.initialize(dimensions, default());
+        arena.initialize(dimensions, data::default());
     }
 }
