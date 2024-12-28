@@ -1,4 +1,4 @@
-use crate::clay::{
+use crate::arena::{
     Arena, ElementConfigType, ElementConfigUnion, ErrorData, ErrorHandler, MeasureTextCallback,
     RenderCommand, RenderCommandArray,
 };
