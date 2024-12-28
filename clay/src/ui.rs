@@ -5,9 +5,9 @@ use crate::external;
 use std::os::raw::c_void;
 
 #[derive(Debug, Copy, Clone)]
+// clay: CLAY_ID
 pub struct Id<'a>(pub data::String<'a>);
 
-// CLAY_ID
 impl Configure for Id<'_> {
     fn configure(&self) {
         unsafe {
@@ -17,9 +17,9 @@ impl Configure for Id<'_> {
 }
 
 #[derive(Debug, Copy, Clone)]
+// clay: CLAY_IDI
 pub struct IdI<'a>(pub data::String<'a>, pub u32);
 
-// CLAY_IDI
 impl Configure for IdI<'_> {
     fn configure(&self) {
         unsafe {
@@ -30,7 +30,8 @@ impl Configure for IdI<'_> {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
-// Clay_LayoutConfig
+// clay: Clay_LayoutConfig
+// clay: CLAY_LAYOUT
 pub struct Layout {
     pub sizing: data::Sizing,
     pub padding: data::Padding,
@@ -49,7 +50,8 @@ impl Configure for Layout {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-// Clay_RectangleElementConfig
+// clay: Clay_RectangleElementConfig
+// clay: CLAY_RECTANGLE
 pub struct Rectangle {
     pub color: data::Color,
     pub corner_radius: data::CornerRadius,
@@ -69,7 +71,8 @@ impl Configure for Rectangle {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
-// Clay_TextElementConfig
+// clay: Clay_TextElementConfig
+// clay: CLAY_TEXT_CONFIG
 pub struct Text {
     pub text_color: data::Color,
     pub font_id: u16,
@@ -81,6 +84,7 @@ pub struct Text {
 }
 
 impl Text {
+    // clay: CLAY_TEXT
     pub fn with(&self, text: data::String) {
         unsafe {
             external::Clay__OpenTextElement(text, external::Clay__StoreTextElementConfig(*self));
@@ -90,7 +94,8 @@ impl Text {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-// Clay_ImageElementConfig
+// clay: Clay_ImageElementConfig
+// clay: CLAY_IMAGE
 pub struct Image {
     pub image_data: *const c_void, // XXX fix
     pub source_dimensions: data::Dimensions,
@@ -119,7 +124,8 @@ impl Configure for Image {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-// Clay_FloatingElementConfig
+// clay: Clay_FloatingElementConfig
+// clay: CLAY_FLOATING
 pub struct Floating {
     pub offset: data::Vector2,
     pub expand: data::Dimensions,
@@ -142,7 +148,8 @@ impl Configure for Floating {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-// Clay_CustomElementConfig
+// clay: Clay_CustomElementConfig
+// clay: CLAY_CUSTOM_ELEMENT
 pub struct Custom {
     custom_data: *const c_void,
     // CLAY_EXTEND_CONFIG_CUSTOM
@@ -161,7 +168,8 @@ impl Configure for Custom {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-// Clay_ScrollElementConfig
+// clay: Clay_ScrollElementConfig
+// clay: CLAY_SCROLL
 pub struct Scroll {
     pub horizontal: bool,
     pub vertical: bool,
@@ -180,7 +188,8 @@ impl Configure for Scroll {
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
-// Clay_BorderElementConfig
+// clay: Clay_BorderElementConfig
+// clay: CLAY_BORDER
 pub struct Border {
     pub left: data::BorderStyle,
     pub right: data::BorderStyle,
@@ -191,6 +200,7 @@ pub struct Border {
 }
 
 impl Border {
+    // clay: CLAY_BORDER_OUTSIDE
     pub fn outside(
         left: data::BorderStyle,
         right: data::BorderStyle,
@@ -205,6 +215,7 @@ impl Border {
             ..data::default()
         }
     }
+    // clay: CLAY_BORDER_OUTSIDE_RADIUS
     pub fn outside_radius(width: u32, color: data::Color, radius: f32) -> Self {
         Self {
             left: data::BorderStyle { width, color },
@@ -220,6 +231,7 @@ impl Border {
             ..data::default()
         }
     }
+    // clay: CLAY_BORDER_ALL
     pub fn all(style: data::BorderStyle) -> Self {
         Self {
             left: style,
@@ -230,6 +242,7 @@ impl Border {
             ..data::default()
         }
     }
+    // clay: CLAY_BORDER_ALL_RADIUS
     pub fn all_radius(width: u32, color: data::Color, radius: f32) -> Self {
         let style = data::BorderStyle { width, color };
         Self {
