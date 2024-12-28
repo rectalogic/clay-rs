@@ -6,13 +6,13 @@ fn test_simple_ui() {
             height: 18.,
         }
     }
-    clay::set_measure_text_callback(measure);
+    clay::Arena::set_measure_text_callback(measure);
 
     let size: u32 = clay::Arena::min_memory_size();
     let memory = vec![0u8; size as usize];
     let arena = clay::Arena::new(&memory);
     let dimensions = clay::Dimensions::new(300.0, 300.0);
-    arena.initialize(dimensions);
+    arena.initialize(dimensions, clay::default());
     let render_commands = clay::Arena::render(|| {
         let color = clay::Color {
             r: 240.,

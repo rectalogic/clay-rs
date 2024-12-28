@@ -257,12 +257,3 @@ impl Configure for Border {
         }
     }
 }
-
-pub type MeasureTextCallback = extern "C" fn(&data::String, &Text) -> data::Dimensions;
-
-// XXX make this an Arena method, make Arena survive initialization
-pub fn set_measure_text_callback(callback: MeasureTextCallback) {
-    unsafe {
-        external::Clay_SetMeasureTextFunction(callback);
-    }
-}

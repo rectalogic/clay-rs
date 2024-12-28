@@ -4,7 +4,11 @@ use crate::{
     ui,
 };
 use clay_macros::packed_enum;
-use std::{fmt, marker::PhantomData, os::raw::c_void};
+use std::{
+    fmt,
+    marker::PhantomData,
+    os::raw::{c_int, c_void},
+};
 
 #[inline]
 pub fn default<T: Default>() -> T {
@@ -40,9 +44,48 @@ impl<'a, T> Iterator for ClayArrayIter<'a, T> {
     }
 }
 
+pub type MeasureTextCallback = extern "C" fn(&data::String, &ui::Text) -> data::Dimensions;
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub enum ErrorType {
+    TextMeasurementFunctionNotProvided,
+    ArenaCapacityExceeded,
+    ElementsCapacityExceeded,
+    TextMeasurementCapacityExceeded,
+    DuplicateId,
+    FloatingContainerParentNotFound,
+    InternalError,
+}
+
+pub type ErrorHandlerCallback<'a> = unsafe extern "C" fn(ErrorData<'a>);
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ErrorData<'a> {
+    error_type: ErrorType,
+    error_text: data::String<'a>,
+    user_data: *const c_int,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct ErrorHandler<'a> {
+    error_handler_callback: ErrorHandlerCallback<'a>,
+    user_data: *const c_int,
+}
+
+impl Default for ErrorHandler<'_> {
+    fn default() -> Self {
+        Self {
+            error_handler_callback: external::Clay__ErrorHandlerFunctionDefault,
+            user_data: std::ptr::null(),
+        }
+    }
+}
+
 #[repr(C)]
 pub struct Arena<'a> {
-    pub label: data::String<'a>,
     next_allocation: u64,
     capacity: u64,
     memory: *mut c_void,
@@ -61,8 +104,14 @@ impl<'a> Arena<'a> {
     pub fn min_memory_size() -> u32 {
         unsafe { external::Clay_MinMemorySize() }
     }
-    pub fn initialize(self, layout_dimensions: data::Dimensions) {
-        unsafe { external::Clay_Initialize(self, layout_dimensions) }
+    pub fn initialize(self, layout_dimensions: data::Dimensions, error_handler: ErrorHandler) {
+        unsafe { external::Clay_Initialize(self, layout_dimensions, error_handler) }
+    }
+    // XXX make this an Arena method, make Arena survive initialization
+    pub fn set_measure_text_callback(callback: MeasureTextCallback) {
+        unsafe {
+            external::Clay_SetMeasureTextFunction(callback);
+        }
     }
     pub fn render<F: FnOnce()>(ui: F) -> RenderCommandArray<'a> {
         unsafe {
@@ -100,14 +149,14 @@ pub(crate) union ElementConfigUnion<'a> {
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct ScrollContainerData<'a> {
-    scroll_position: &'a data::Vector2, // XXX
+    scroll_position: &'a data::Vector2,
     scroll_container_dimensions: data::Dimensions,
     content_dimensions: data::Dimensions,
     config: ui::Scroll,
     found: bool,
 }
 
-#[packed_enum]
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub enum RenderCommandType {
     None,
@@ -233,18 +282,6 @@ mod tests {
         let arena = Arena::new(&memory);
         assert_eq!(arena.capacity, memory.len() as u64);
         let dimensions = data::Dimensions::new(300.0, 300.0);
-        arena.initialize(dimensions);
-    }
-
-    #[test]
-    fn initialize_arena_label() {
-        let size: u32 = Arena::min_memory_size();
-        let memory = vec![0u8; size as usize];
-        let mut arena = Arena::new(&memory);
-        arena.label = "Main Arena".into();
-        assert_eq!(arena.capacity, memory.len() as u64);
-        let dimensions = data::Dimensions::new(300.0, 300.0);
-        arena.initialize(dimensions);
-        // XXX assert on label
+        arena.initialize(dimensions, default());
     }
 }
