@@ -1,8 +1,4 @@
-use crate::{
-    data,
-    external::{self, Clay_RenderCommandArray_Get},
-    ui, ClayArray, ClayArrayIter,
-};
+use crate::{data, external, ui};
 use clay_macros::packed_enum;
 use std::{
     fmt,
@@ -62,21 +58,30 @@ impl Default for ErrorHandler<'_> {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 // clay: Clay_Arena
-pub struct Arena<'a> {
+pub(crate) struct ArenaInternal {
     next_allocation: u64,
     capacity: u64,
     memory: *mut c_void,
-    _lifetime_marker: PhantomData<&'a c_void>,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct Arena<'a> {
+    memory: &'a [u8],
+    internal: ArenaInternal,
 }
 
 impl<'a> Arena<'a> {
     // clay: Clay_CreateArenaWithCapacityAndMemory
     pub fn new(memory: &'a [u8]) -> Arena<'a> {
-        unsafe {
-            external::Clay_CreateArenaWithCapacityAndMemory(
-                memory.len() as u32,
-                memory.as_ptr() as *const c_void,
-            )
+        Arena {
+            memory,
+            internal: unsafe {
+                external::Clay_CreateArenaWithCapacityAndMemory(
+                    memory.len() as u32,
+                    memory.as_ptr() as *const c_void,
+                )
+            },
         }
     }
     // clay: Clay_MinMemorySize
@@ -94,8 +99,8 @@ impl<'a> Arena<'a> {
         };
     }
     // clay: Clay_Initialize
-    pub fn initialize(self, layout_dimensions: data::Dimensions, error_handler: ErrorHandler) {
-        unsafe { external::Clay_Initialize(self, layout_dimensions, error_handler) }
+    pub fn initialize(&self, layout_dimensions: data::Dimensions, error_handler: ErrorHandler) {
+        unsafe { external::Clay_Initialize(self.internal, layout_dimensions, error_handler) }
     }
     // clay: Clay_SetMeasureTextFunction
     pub fn set_measure_text_callback(&self, callback: MeasureTextCallback) {
@@ -205,9 +210,35 @@ impl fmt::Debug for RenderCommand<'_> {
     }
 }
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 // clay: Clay_RenderCommandArray
-pub type RenderCommandArray<'a> = ClayArray<'a, RenderCommand<'a>>;
-pub type RenderCommandIter<'a> = ClayArrayIter<'a, RenderCommand<'a>>;
+pub struct RenderCommandArray<'a> {
+    capacity: u32,
+    length: u32,
+    internal_array: *const RenderCommand<'a>,
+    _lifetime_marker: PhantomData<&'a RenderCommand<'a>>,
+}
+
+pub struct RenderCommandIter<'a> {
+    pub(crate) array: RenderCommandArray<'a>,
+    pub(crate) index: i32,
+}
+
+impl<'a> Iterator for RenderCommandIter<'a> {
+    type Item = &'a RenderCommand<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.array.length as i32 {
+            None
+        } else {
+            let item = unsafe { external::Clay_RenderCommandArray_Get(&self.array, self.index) };
+            self.index += 1;
+            Some(item)
+        }
+    }
+}
+
 impl<'a> IntoIterator for RenderCommandArray<'a> {
     type Item = &'a RenderCommand<'a>;
     type IntoIter = RenderCommandIter<'a>;
@@ -216,7 +247,6 @@ impl<'a> IntoIterator for RenderCommandArray<'a> {
         RenderCommandIter {
             array: self,
             index: 0,
-            getter: Clay_RenderCommandArray_Get,
         }
     }
 }
@@ -274,7 +304,7 @@ mod tests {
     fn new_arena() {
         let memory = [0u8; 1024];
         let arena = Arena::new(&memory);
-        assert_eq!(arena.capacity, memory.len() as u64);
+        assert_eq!(arena.internal.capacity, memory.len() as u64);
     }
 
     #[test]
@@ -282,7 +312,7 @@ mod tests {
         let size: u32 = Arena::min_memory_size();
         let memory = vec![0u8; size as usize];
         let arena = Arena::new(&memory);
-        assert_eq!(arena.capacity, memory.len() as u64);
+        assert_eq!(arena.internal.capacity, memory.len() as u64);
         let dimensions = data::Dimensions::new(300.0, 300.0);
         arena.initialize(dimensions, data::default());
     }

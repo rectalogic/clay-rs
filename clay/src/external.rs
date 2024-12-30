@@ -1,7 +1,7 @@
 use crate::data;
 use crate::system::{
-    Arena, ElementConfigType, ElementConfigUnion, ErrorData, ErrorHandler, MeasureTextCallback,
-    RenderCommand, RenderCommandArray,
+    ArenaInternal, ElementConfigType, ElementConfigUnion, ErrorData, ErrorHandler,
+    MeasureTextCallback, RenderCommand, RenderCommandArray,
 };
 use crate::ui;
 use std::os::raw::{c_float, c_int, c_void};
@@ -9,12 +9,12 @@ use std::os::raw::{c_float, c_int, c_void};
 #[link(name = "clay")]
 extern "C" {
     pub(crate) fn Clay_MinMemorySize() -> u32;
-    pub(crate) fn Clay_CreateArenaWithCapacityAndMemory<'a>(
+    pub(crate) fn Clay_CreateArenaWithCapacityAndMemory(
         capacity: u32,
         offset: *const c_void,
-    ) -> Arena<'a>;
+    ) -> ArenaInternal;
     pub(crate) fn Clay_Initialize(
-        arena: Arena,
+        arena: ArenaInternal,
         layout_dimensions: data::Dimensions,
         error_handler: ErrorHandler,
     );
