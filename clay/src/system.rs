@@ -85,15 +85,13 @@ impl<'a> Arena<'a> {
     }
     // clay: Clay_SetMaxElementCount
     pub fn set_max_element_count(max_element_count: u32) {
-        unsafe {
-            external::Clay_SetMaxElementCount(max_element_count);
-        }
+        unsafe { external::Clay_SetMaxElementCount(max_element_count) };
     }
     // clay: Clay_SetMaxMeasureTextCacheWordCount
     pub fn set_max_measure_text_cache_word_count(max_measure_text_cache_word_count: u32) {
         unsafe {
-            external::Clay_SetMaxMeasureTextCacheWordCount(max_measure_text_cache_word_count);
-        }
+            external::Clay_SetMaxMeasureTextCacheWordCount(max_measure_text_cache_word_count)
+        };
     }
     // clay: Clay_Initialize
     pub fn initialize(self, layout_dimensions: data::Dimensions, error_handler: ErrorHandler) {
@@ -101,15 +99,11 @@ impl<'a> Arena<'a> {
     }
     // clay: Clay_SetMeasureTextFunction
     pub fn set_measure_text_callback(&self, callback: MeasureTextCallback) {
-        unsafe {
-            external::Clay_SetMeasureTextFunction(callback);
-        }
+        unsafe { external::Clay_SetMeasureTextFunction(callback) };
     }
     // clay: Clay_SetPointerState
     pub fn set_pointer_state(position: data::Vector2, pointer_down: bool) {
-        unsafe {
-            external::Clay_SetPointerState(position, pointer_down);
-        }
+        unsafe { external::Clay_SetPointerState(position, pointer_down) };
     }
     // clay: Clay_UpdateScrollContainers
     pub fn update_scroll_containers(
@@ -122,15 +116,13 @@ impl<'a> Arena<'a> {
                 enable_drag_scrolling,
                 scroll_delta,
                 delta_time as c_float,
-            );
-        }
+            )
+        };
     }
 
     // clay: Clay_BeginLayout/Clay_EndLayout
     pub fn render<F: FnOnce()>(&self, ui: F) -> RenderCommandArray<'a> {
-        unsafe {
-            external::Clay_BeginLayout();
-        }
+        unsafe { external::Clay_BeginLayout() };
         ui();
         unsafe { external::Clay_EndLayout() }
     }
@@ -182,7 +174,7 @@ pub enum RenderCommandType {
 pub struct RenderCommand<'a> {
     bounding_box: data::BoundingBox,
     config: ElementConfigUnion<'a>,
-    text: data::String<'a>, // XXX fix
+    text: data::String<'a>,
     id: u32,
     command_type: RenderCommandType,
 }
