@@ -128,9 +128,12 @@ impl<'a> Arena<'a> {
     }
 
     // clay: Clay_BeginLayout/Clay_EndLayout
-    pub fn render<'b, F: FnOnce()>(&'b mut self, ui: F) -> &'b mut RenderCommandIter<'a> {
+    pub fn render<'b, F: FnOnce(&ui::Builder)>(
+        &'b mut self,
+        ui: F,
+    ) -> &'b mut RenderCommandIter<'a> {
         unsafe { external::Clay_BeginLayout() };
-        ui(); // XXX pass self into ui?
+        ui(&ui::Builder);
         self.render_commands = unsafe { external::Clay_EndLayout() }.into_iter();
         &mut self.render_commands
     }
@@ -272,51 +275,6 @@ impl<'a> IntoIterator for RenderCommandArray<'a> {
             index: 0,
         }
     }
-}
-
-pub mod internal {
-    use super::external;
-
-    pub struct ParentElement;
-
-    impl ParentElement {
-        pub fn new() -> Self {
-            unsafe {
-                external::Clay__OpenElement();
-            }
-            Self
-        }
-        pub fn post_configuration(&self) {
-            unsafe {
-                external::Clay__ElementPostConfiguration();
-            }
-        }
-    }
-
-    impl Drop for ParentElement {
-        fn drop(&mut self) {
-            unsafe {
-                external::Clay__CloseElement();
-            }
-        }
-    }
-
-    pub trait Configure {
-        fn configure(&self);
-    }
-}
-
-// clay: CLAY macro
-#[macro_export]
-macro_rules! clay {
-    ( ( $( $expression:expr ),+ ) $( $children:block )? ) => {
-        {
-            let parent = $crate::internal::ParentElement::new();
-            $( $crate::internal::Configure::configure(&$expression); )+
-            parent.post_configuration();
-            $( $children )?
-        }
-    };
 }
 
 #[cfg(test)]

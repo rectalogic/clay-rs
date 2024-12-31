@@ -1,17 +1,115 @@
 use crate::data;
 use crate::external;
-use crate::system::{internal::Configure, ElementConfigType, ElementConfigUnion};
+use crate::system::{ElementConfigType, ElementConfigUnion};
 use std::os::raw::c_void;
+
+pub struct Builder;
+
+impl Builder {
+    // clay: CLAY macro
+    pub fn build<F: FnOnce(&Self)>(&self, items: &[Item<'_>], build_children: F) {
+        unsafe { external::Clay__OpenElement() };
+        for item in items {
+            match *item {
+                Item::Id(id) => unsafe {
+                    external::Clay__AttachId(external::Clay__HashString(id, 0, 0))
+                },
+                Item::IdI(id, i) => unsafe {
+                    external::Clay__AttachId(external::Clay__HashString(id, i, 0))
+                },
+                Item::Layout(layout) => unsafe {
+                    external::Clay__AttachLayoutConfig(external::Clay__StoreLayoutConfig(layout))
+                },
+                Item::Rectangle(rectangle) => unsafe {
+                    external::Clay__AttachElementConfig(
+                        ElementConfigUnion {
+                            rectangle_element_config: external::Clay__StoreRectangleElementConfig(
+                                rectangle,
+                            ),
+                        },
+                        ElementConfigType::Rectangle,
+                    )
+                },
+                Item::Text(text, config) => unsafe {
+                    external::Clay__OpenTextElement(
+                        text,
+                        external::Clay__StoreTextElementConfig(config),
+                    )
+                },
+                Item::Image(image) => unsafe {
+                    external::Clay__AttachElementConfig(
+                        ElementConfigUnion {
+                            image_element_config: external::Clay__StoreImageElementConfig(image),
+                        },
+                        ElementConfigType::Image,
+                    )
+                },
+                Item::Floating(floating) => unsafe {
+                    external::Clay__AttachElementConfig(
+                        ElementConfigUnion {
+                            floating_element_config: external::Clay__StoreFloatingElementConfig(
+                                floating,
+                            ),
+                        },
+                        ElementConfigType::FloatingContainer,
+                    )
+                },
+                Item::Custom(custom) => unsafe {
+                    external::Clay__AttachElementConfig(
+                        ElementConfigUnion {
+                            custom_element_config: external::Clay__StoreCustomElementConfig(custom),
+                        },
+                        ElementConfigType::Custom,
+                    )
+                },
+                Item::Scroll(scroll) => unsafe {
+                    external::Clay__AttachElementConfig(
+                        ElementConfigUnion {
+                            scroll_element_config: external::Clay__StoreScrollElementConfig(scroll),
+                        },
+                        ElementConfigType::ScrollContainer,
+                    )
+                },
+                Item::Border(border) => unsafe {
+                    external::Clay__AttachElementConfig(
+                        ElementConfigUnion {
+                            border_element_config: external::Clay__StoreBorderElementConfig(border),
+                        },
+                        ElementConfigType::BorderContainer,
+                    )
+                },
+            }
+        }
+
+        unsafe { external::Clay__ElementPostConfiguration() };
+
+        build_children(self);
+
+        unsafe { external::Clay__CloseElement() };
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum Item<'a> {
+    Id(data::String<'a>),
+    IdI(data::String<'a>, u32),
+    Layout(Layout),
+    Rectangle(Rectangle),
+    Text(data::String<'a>, Text),
+    Image(Image),
+    Floating(Floating),
+    Custom(Custom),
+    Scroll(Scroll),
+    Border(Border),
+}
 
 #[derive(Debug, Copy, Clone)]
 // clay: CLAY_ID
 pub struct Id<'a>(pub data::String<'a>);
 
-impl Configure for Id<'_> {
-    fn configure(&self) {
-        unsafe {
-            external::Clay__AttachId(external::Clay__HashString(self.0, 0, 0));
-        }
+impl<'a> From<Id<'a>> for Item<'a> {
+    fn from(id: Id<'a>) -> Self {
+        Item::Id(id.0)
     }
 }
 
@@ -19,11 +117,9 @@ impl Configure for Id<'_> {
 // clay: CLAY_IDI
 pub struct IdI<'a>(pub data::String<'a>, pub u32);
 
-impl Configure for IdI<'_> {
-    fn configure(&self) {
-        unsafe {
-            external::Clay__AttachId(external::Clay__HashString(self.0, self.1, 0));
-        }
+impl<'a> From<IdI<'a>> for Item<'a> {
+    fn from(id: IdI<'a>) -> Self {
+        Item::IdI(id.0, id.1)
     }
 }
 
@@ -39,11 +135,9 @@ pub struct Layout {
     pub layout_direction: data::LayoutDirection,
 }
 
-impl Configure for Layout {
-    fn configure(&self) {
-        unsafe {
-            external::Clay__AttachLayoutConfig(external::Clay__StoreLayoutConfig(*self));
-        }
+impl From<Layout> for Item<'_> {
+    fn from(layout: Layout) -> Self {
+        Item::Layout(layout)
     }
 }
 
@@ -57,14 +151,9 @@ pub struct Rectangle {
     // CLAY_EXTEND_CONFIG_RECTANGLE
 }
 
-impl Configure for Rectangle {
-    fn configure(&self) {
-        unsafe {
-            let config = ElementConfigUnion {
-                rectangle_element_config: external::Clay__StoreRectangleElementConfig(*self),
-            };
-            external::Clay__AttachElementConfig(config, ElementConfigType::Rectangle);
-        }
+impl From<Rectangle> for Item<'_> {
+    fn from(rectangle: Rectangle) -> Self {
+        Item::Rectangle(rectangle)
     }
 }
 
@@ -84,10 +173,8 @@ pub struct Text {
 
 impl Text {
     // clay: CLAY_TEXT
-    pub fn with(&self, text: data::String) {
-        unsafe {
-            external::Clay__OpenTextElement(text, external::Clay__StoreTextElementConfig(*self));
-        }
+    pub fn with<'a>(&self, text: data::String<'a>) -> Item<'a> {
+        Item::Text(text, *self)
     }
 }
 
@@ -110,14 +197,9 @@ impl Default for Image {
     }
 }
 
-impl Configure for Image {
-    fn configure(&self) {
-        unsafe {
-            let config = ElementConfigUnion {
-                image_element_config: external::Clay__StoreImageElementConfig(*self),
-            };
-            external::Clay__AttachElementConfig(config, ElementConfigType::Image);
-        }
+impl From<Image> for Item<'_> {
+    fn from(image: Image) -> Self {
+        Item::Image(image)
     }
 }
 
@@ -134,14 +216,9 @@ pub struct Floating {
     pub pointer_capture_mode: data::PointerCaptureMode,
 }
 
-impl Configure for Floating {
-    fn configure(&self) {
-        unsafe {
-            let config = ElementConfigUnion {
-                floating_element_config: external::Clay__StoreFloatingElementConfig(*self),
-            };
-            external::Clay__AttachElementConfig(config, ElementConfigType::FloatingContainer);
-        }
+impl From<Floating> for Item<'_> {
+    fn from(floating: Floating) -> Self {
+        Item::Floating(floating)
     }
 }
 
@@ -154,14 +231,9 @@ pub struct Custom {
     // CLAY_EXTEND_CONFIG_CUSTOM
 }
 
-impl Configure for Custom {
-    fn configure(&self) {
-        unsafe {
-            let config = ElementConfigUnion {
-                custom_element_config: external::Clay__StoreCustomElementConfig(*self),
-            };
-            external::Clay__AttachElementConfig(config, ElementConfigType::Custom);
-        }
+impl From<Custom> for Item<'_> {
+    fn from(custom: Custom) -> Self {
+        Item::Custom(custom)
     }
 }
 
@@ -174,14 +246,9 @@ pub struct Scroll {
     pub vertical: bool,
 }
 
-impl Configure for Scroll {
-    fn configure(&self) {
-        unsafe {
-            let config = ElementConfigUnion {
-                scroll_element_config: external::Clay__StoreScrollElementConfig(*self),
-            };
-            external::Clay__AttachElementConfig(config, ElementConfigType::ScrollContainer);
-        }
+impl From<Scroll> for Item<'_> {
+    fn from(scroll: Scroll) -> Self {
+        Item::Scroll(scroll)
     }
 }
 
@@ -259,13 +326,9 @@ impl Border {
         }
     }
 }
-impl Configure for Border {
-    fn configure(&self) {
-        unsafe {
-            let config = ElementConfigUnion {
-                border_element_config: external::Clay__StoreBorderElementConfig(*self),
-            };
-            external::Clay__AttachElementConfig(config, ElementConfigType::BorderContainer);
-        }
+
+impl From<Border> for Item<'_> {
+    fn from(border: Border) -> Self {
+        Item::Border(border)
     }
 }
