@@ -13,6 +13,7 @@ fn test_simple_ui() {
     arena.set_measure_text_callback(measure);
     let dimensions = clay::Dimensions::new(300.0, 300.0);
     arena.initialize(dimensions, clay::default());
+    let mut arena = arena;
     let render_commands = arena.render(|| {
         let color = clay::Color {
             r: 240.,
@@ -63,7 +64,7 @@ fn test_simple_ui() {
         //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
         // }
     });
-    for command in render_commands.into_iter() {
+    for command in render_commands {
         dbg!(command);
     }
 }
