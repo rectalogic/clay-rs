@@ -1,5 +1,7 @@
 #[test]
 fn test_simple_ui() {
+    use std::iter::zip;
+
     extern "C" fn measure(text: &clay::String, config: &clay::Text) -> clay::Dimensions {
         clay::Dimensions {
             width: (text.len() * 10) as f32,
@@ -49,7 +51,6 @@ fn test_simple_ui() {
                     },
                     clay::Image { source_dimensions: clay::Dimensions { width: 128., height: 128.}, ..clay::default() } // XXX need extended sourceUrl
                 ) {
-                    println!("children");
                 }
             );
             clay::Text {
@@ -64,7 +65,12 @@ fn test_simple_ui() {
         //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
         // }
     });
-    for command in render_commands {
-        dbg!(command);
+    let expected = [
+        r#"RenderCommand { bounding_box: BoundingBox { x: 16.0, y: 16.0, width: 32.0, height: 32.0 }, config: Image { image_data: 0x0, source_dimensions: Dimensions { width: 128.0, height: 128.0 } }, text: String { chars: "" }, id: 1782946882, command_type: Image }"#,
+        r#"RenderCommand { bounding_box: BoundingBox { x: 64.0, y: 23.0, width: 140.0, height: 18.0 }, config: Text { text_color: Color { r: 240.0, g: 189.0, b: 100.0, a: 255.0 }, font_id: 2, font_size: 18, letter_spacing: 0, line_height: 0, wrap_mode: ClayTextWrapWords }, text: String { chars: "Some text here" }, id: 787525995, command_type: Text }"#,
+        r#"RenderCommand { bounding_box: BoundingBox { x: 0.0, y: 0.0, width: 300.0, height: 64.0 }, config: Border { left: BorderStyle { width: 2, color: Color { r: 240.0, g: 189.0, b: 100.0, a: 255.0 } }, right: BorderStyle { width: 2, color: Color { r: 240.0, g: 189.0, b: 100.0, a: 255.0 } }, top: BorderStyle { width: 2, color: Color { r: 240.0, g: 189.0, b: 100.0, a: 255.0 } }, bottom: BorderStyle { width: 2, color: Color { r: 240.0, g: 189.0, b: 100.0, a: 255.0 } }, between_children: BorderStyle { width: 0, color: Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 } }, corner_radius: CornerRadius { top_left: 10.0, top_right: 10.0, bottom_left: 10.0, bottom_right: 10.0 } }, text: String { chars: "" }, id: 2979443697, command_type: Border }"#,
+    ];
+    for (expected_command, command) in zip(expected, render_commands) {
+        assert_eq!(expected_command, format!("{:?}", command));
     }
 }
