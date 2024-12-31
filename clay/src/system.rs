@@ -69,6 +69,7 @@ pub(crate) struct ArenaInternal {
 pub struct Arena<'a> {
     memory: &'a [u8],
     internal: ArenaInternal,
+    render_commands: RenderCommandIter<'a>,
 }
 
 impl<'a> Arena<'a> {
@@ -82,6 +83,7 @@ impl<'a> Arena<'a> {
                     memory.as_ptr() as *const c_void,
                 )
             },
+            render_commands: Default::default(),
         }
     }
     // clay: Clay_MinMemorySize
@@ -126,10 +128,11 @@ impl<'a> Arena<'a> {
     }
 
     // clay: Clay_BeginLayout/Clay_EndLayout
-    pub fn render<F: FnOnce()>(&self, ui: F) -> RenderCommandArray<'a> {
+    pub fn render<'b, F: FnOnce()>(&'b mut self, ui: F) -> &'b mut RenderCommandIter<'a> {
         unsafe { external::Clay_BeginLayout() };
-        ui();
-        unsafe { external::Clay_EndLayout() }
+        ui(); // XXX pass self into ui?
+        self.render_commands = unsafe { external::Clay_EndLayout() }.into_iter();
+        &mut self.render_commands
     }
 }
 
@@ -174,7 +177,6 @@ pub enum RenderCommandType {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone)]
 // clay: Clay_RenderCommand
 pub struct RenderCommand<'a> {
     bounding_box: data::BoundingBox,
@@ -213,16 +215,37 @@ impl fmt::Debug for RenderCommand<'_> {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 // clay: Clay_RenderCommandArray
-pub struct RenderCommandArray<'a> {
+pub(crate) struct RenderCommandArray<'a> {
     capacity: u32,
     length: u32,
     internal_array: *const RenderCommand<'a>,
     _lifetime_marker: PhantomData<&'a RenderCommand<'a>>,
 }
 
+impl Default for RenderCommandArray<'_> {
+    fn default() -> Self {
+        Self {
+            capacity: 0,
+            length: 0,
+            internal_array: std::ptr::null(),
+            _lifetime_marker: PhantomData,
+        }
+    }
+}
+
+#[derive(Default)]
 pub struct RenderCommandIter<'a> {
-    pub(crate) array: RenderCommandArray<'a>,
-    pub(crate) index: i32,
+    array: RenderCommandArray<'a>,
+    index: i32,
+}
+
+impl fmt::Debug for RenderCommandIter<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RenderCommandIter")
+            .field("array", &self.array)
+            .field("index", &self.index)
+            .finish()
+    }
 }
 
 impl<'a> Iterator for RenderCommandIter<'a> {
