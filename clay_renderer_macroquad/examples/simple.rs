@@ -3,22 +3,20 @@ use macroquad::prelude::*;
 
 #[macroquad::main("Simple")]
 async fn main() {
-    // XXX set this in the renderer library
-    extern "C" fn measure(text: &clay::String, config: &clay::Text) -> clay::Dimensions {
-        clay::Dimensions {
-            width: (text.len() * 10) as f32,
-            height: config.font_size as f32,
-        }
-    }
+    let font = load_ttf_font(
+        "clay/clay/examples/introducing-clay-video-demo/resources/Roboto-Regular.ttf",
+    )
+    .await
+    .unwrap();
+    let font_id = clay_renderer_macroquad::add_font(font);
 
     let size: u32 = clay::Arena::min_memory_size();
     let memory = vec![0u8; size as usize];
     let arena = clay::Arena::new(&memory);
-    arena.set_measure_text_callback(measure);
     let dimensions = clay::Dimensions::new(300.0, 300.0);
     arena.initialize(dimensions, clay::default());
     let mut arena = arena;
-    let renderer = clay_renderer_macroquad::MacroquadRenderer;
+    let renderer = clay_renderer_macroquad::MacroquadRenderer::new();
     loop {
         arena.render(&renderer, |builder| {
             builder.build(
@@ -37,9 +35,9 @@ async fn main() {
                     .into(),
                 ],
                 |builder| {
-                    child_rect(builder, clay::Color::rgb(0., 255., 0.));
-                    child_rect(builder, clay::Color::rgb(0., 0., 255.));
-                    child_rect(builder, clay::Color::rgb(255., 0., 255.));
+                    child_rect(builder, clay::Color::rgb(0., 255., 0.), font_id);
+                    child_rect(builder, clay::Color::rgb(0., 0., 255.), font_id);
+                    child_rect(builder, clay::Color::rgb(255., 0., 255.), font_id);
                 },
             );
         });
@@ -48,7 +46,7 @@ async fn main() {
     }
 }
 
-fn child_rect(builder: &Builder, color: clay::Color) {
+fn child_rect(builder: &Builder, color: clay::Color, font_id: u16) {
     builder.build(
         &[
             clay::Layout {
@@ -69,7 +67,9 @@ fn child_rect(builder: &Builder, color: clay::Color) {
         |builder| {
             builder.build(
                 &[clay::Text {
+                    font_id,
                     font_size: 18,
+                    text_color: clay::Color::rgb(0., 0., 0.),
                     ..clay::default()
                 }
                 .with("Foobar".into())],

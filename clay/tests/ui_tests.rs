@@ -40,7 +40,7 @@ fn test_simple_ui() {
     let size: u32 = clay::Arena::min_memory_size();
     let memory = vec![0u8; size as usize];
     let arena = clay::Arena::new(&memory);
-    arena.set_measure_text_callback(measure);
+    clay::Arena::set_measure_text_callback(measure);
     let dimensions = clay::Dimensions::new(300.0, 300.0);
     arena.initialize(dimensions, clay::default());
     let mut arena = arena;

@@ -111,7 +111,7 @@ impl<'a> Arena<'a> {
         unsafe { external::Clay_Initialize(self.internal, layout_dimensions, error_handler) }
     }
     // clay: Clay_SetMeasureTextFunction
-    pub fn set_measure_text_callback(&self, callback: MeasureTextCallback) {
+    pub fn set_measure_text_callback(callback: MeasureTextCallback) {
         unsafe { external::Clay_SetMeasureTextFunction(callback) };
     }
     // clay: Clay_SetQueryScrollOffsetFunction
