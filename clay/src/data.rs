@@ -84,6 +84,15 @@ pub struct Color {
     pub a: c_float,
 }
 
+impl Color {
+    pub fn rgba(r: f32, g: f32, b: f32, a: f32) -> Self {
+        Self { r, g, b, a }
+    }
+    pub fn rgb(r: f32, g: f32, b: f32) -> Self {
+        Self { r, g, b, a: 255.0 }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, Default)]
 // clay: Clay_BoundingBox
@@ -112,9 +121,6 @@ pub struct PointerData {
     state: PointerDataInteractionState,
 }
 
-pub type OnHoverCallback = extern "C" fn(ElementId, PointerData, *const c_int);
-pub type QueryScrollOffsetCallback = extern "C" fn(u32) -> Vector2;
-
 #[repr(C)]
 #[derive(Copy, Clone)]
 // clay: Clay_ElementId
@@ -126,31 +132,13 @@ pub struct ElementId<'a> {
 }
 
 impl ElementId<'_> {
-    // clay: Clay_Hovered
-    pub fn hovered() -> bool {
-        unsafe { external::Clay_Hovered() }
-    }
     // clay: Clay_PointerOver
-    pub fn pointer_over(&self) -> bool {
+    pub fn is_pointer_over(&self) -> bool {
         unsafe { external::Clay_PointerOver(*self) }
     }
     // clay: Clay_GetScrollContainerData
     pub fn get_scroll_container_data(&self) -> ScrollContainerData<'_> {
         unsafe { external::Clay_GetScrollContainerData(*self) }
-    }
-    // clay: Clay_OnHover
-    pub fn on_hover(on_hover: OnHoverCallback, user_data: *const c_int) {
-        unsafe {
-            external::Clay_OnHover(on_hover, user_data);
-        }
-    }
-    // clay: Clay_SetQueryScrollOffsetFunction
-    pub fn set_query_scroll_offset_callback(
-        query_scroll_offset_callback: QueryScrollOffsetCallback,
-    ) {
-        unsafe {
-            external::Clay_SetQueryScrollOffsetFunction(query_scroll_offset_callback);
-        }
     }
 }
 

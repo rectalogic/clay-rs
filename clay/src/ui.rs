@@ -1,9 +1,11 @@
 use crate::data;
 use crate::external;
 use crate::system::{ElementConfigType, ElementConfigUnion};
-use std::os::raw::c_void;
+use std::os::raw::{c_int, c_void};
 
-pub struct Builder;
+pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, *const c_int);
+
+pub struct Builder(pub(crate) ());
 
 impl Builder {
     // clay: CLAY macro
@@ -87,6 +89,16 @@ impl Builder {
 
         unsafe { external::Clay__CloseElement() };
     }
+
+    // clay: Clay_OnHover
+    pub fn set_on_hover_callback(on_hover: OnHoverCallback, user_data: isize) {
+        unsafe { external::Clay_OnHover(on_hover, user_data) };
+    }
+
+    // clay: Clay_Hovered
+    pub fn hovered(&self) -> bool {
+        unsafe { external::Clay_Hovered() }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -142,7 +154,7 @@ impl From<Layout> for Item<'_> {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 // clay: Clay_RectangleElementConfig
 // clay: CLAY_RECTANGLE
 pub struct Rectangle {
