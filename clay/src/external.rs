@@ -1,7 +1,7 @@
 use crate::data;
 use crate::system::{
     ArenaInternal, ElementConfigType, ElementConfigUnion, ErrorData, ErrorHandler,
-    MeasureTextCallback, RenderCommand, RenderCommandArray,
+    MeasureTextCallback, QueryScrollOffsetCallback, RenderCommand, RenderCommandArray,
 };
 use crate::ui;
 use std::os::raw::{c_float, c_int, c_void};
@@ -24,13 +24,14 @@ extern "C" {
         scroll_delta: data::Vector2,
         delta_time: c_float,
     );
+    pub(crate) fn Clay_SetLayoutDimensions(dimensions: data::Dimensions);
 
     pub(crate) fn Clay_Hovered() -> bool;
-    pub(crate) fn Clay_OnHover(on_hover_callback: data::OnHoverCallback, user_data: *const c_int);
+    pub(crate) fn Clay_OnHover(on_hover_callback: ui::OnHoverCallback, user_data: isize);
     pub(crate) fn Clay_PointerOver(element_id: data::ElementId) -> bool;
     pub(crate) fn Clay_GetScrollContainerData(id: data::ElementId) -> data::ScrollContainerData;
     pub(crate) fn Clay_SetQueryScrollOffsetFunction(
-        query_scroll_offset_callback: data::QueryScrollOffsetCallback,
+        query_scroll_offset_callback: QueryScrollOffsetCallback,
     );
     pub(crate) fn Clay_SetCullingEnabled(enabled: bool);
     pub(crate) fn Clay_SetMaxElementCount(max_element_count: u32);

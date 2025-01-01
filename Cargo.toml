@@ -2,5 +2,6 @@
 members = [
     "clay",
     "clay-macros",
+    "clay_renderer_macroquad",
 ]
 resolver = "2"

@@ -7,6 +7,7 @@ use std::{
 };
 
 pub type MeasureTextCallback = extern "C" fn(&data::String, &ui::Text) -> data::Dimensions;
+pub type QueryScrollOffsetCallback = extern "C" fn(u32) -> data::Vector2;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -53,6 +54,11 @@ impl Default for ErrorHandler<'_> {
             user_data: std::ptr::null(),
         }
     }
+}
+
+pub trait Renderer {
+    fn get_layout_dimensions(&self) -> data::Dimensions;
+    fn render(&self, render_commands: &mut RenderCommandIter<'_>);
 }
 
 #[repr(C)]
@@ -108,6 +114,12 @@ impl<'a> Arena<'a> {
     pub fn set_measure_text_callback(&self, callback: MeasureTextCallback) {
         unsafe { external::Clay_SetMeasureTextFunction(callback) };
     }
+    // clay: Clay_SetQueryScrollOffsetFunction
+    pub fn set_query_scroll_offset_callback(
+        query_scroll_offset_callback: QueryScrollOffsetCallback,
+    ) {
+        unsafe { external::Clay_SetQueryScrollOffsetFunction(query_scroll_offset_callback) };
+    }
     // clay: Clay_SetPointerState
     pub fn set_pointer_state(position: data::Vector2, pointer_down: bool) {
         unsafe { external::Clay_SetPointerState(position, pointer_down) };
@@ -126,16 +138,18 @@ impl<'a> Arena<'a> {
             )
         };
     }
+    // clay: Clay_SetLayoutDimensions
+    fn set_layout_dimensions(dimensions: data::Dimensions) {
+        unsafe { external::Clay_SetLayoutDimensions(dimensions) };
+    }
 
     // clay: Clay_BeginLayout/Clay_EndLayout
-    pub fn render<'b, F: FnOnce(&ui::Builder)>(
-        &'b mut self,
-        ui: F,
-    ) -> &'b mut RenderCommandIter<'a> {
+    pub fn render<'b, F: FnOnce(&ui::Builder)>(&'b mut self, renderer: &impl Renderer, ui: F) {
+        Arena::set_layout_dimensions(renderer.get_layout_dimensions());
         unsafe { external::Clay_BeginLayout() };
-        ui(&ui::Builder);
+        ui(&ui::Builder(()));
         self.render_commands = unsafe { external::Clay_EndLayout() }.into_iter();
-        &mut self.render_commands
+        renderer.render(&mut self.render_commands);
     }
 }
 
@@ -168,7 +182,7 @@ pub(crate) union ElementConfigUnion<'a> {
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 // clay: Clay_RenderCommandType
-pub enum RenderCommandType {
+enum RenderCommandType {
     None,
     Rectangle,
     Border,
@@ -179,14 +193,51 @@ pub enum RenderCommandType {
     Custom,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum RenderCommandElement {
+    None,
+    Rectangle(ui::Rectangle),
+    Border(ui::Border),
+    Text(ui::Text),
+    Image(ui::Image),
+    ScissorStart,
+    ScissorEnd,
+    Custom(ui::Custom),
+}
+
 #[repr(C)]
 // clay: Clay_RenderCommand
 pub struct RenderCommand<'a> {
-    bounding_box: data::BoundingBox,
+    pub bounding_box: data::BoundingBox,
     config: ElementConfigUnion<'a>,
-    text: data::String<'a>,
-    id: u32,
+    pub text: data::String<'a>,
+    pub id: u32,
     command_type: RenderCommandType,
+}
+
+impl RenderCommand<'_> {
+    pub fn element(&self) -> RenderCommandElement {
+        match self.command_type {
+            RenderCommandType::Rectangle => {
+                RenderCommandElement::Rectangle(unsafe { *self.config.rectangle_element_config })
+            }
+            RenderCommandType::Text => {
+                RenderCommandElement::Text(unsafe { *self.config.text_element_config })
+            }
+            RenderCommandType::Border => {
+                RenderCommandElement::Border(unsafe { *self.config.border_element_config })
+            }
+            RenderCommandType::Image => {
+                RenderCommandElement::Image(unsafe { *self.config.image_element_config })
+            }
+            RenderCommandType::Custom => {
+                RenderCommandElement::Custom(unsafe { *self.config.custom_element_config })
+            }
+            RenderCommandType::None => RenderCommandElement::None,
+            RenderCommandType::ScissorStart => RenderCommandElement::ScissorStart,
+            RenderCommandType::ScissorEnd => RenderCommandElement::ScissorEnd,
+        }
+    }
 }
 
 impl fmt::Debug for RenderCommand<'_> {
@@ -244,10 +295,7 @@ pub struct RenderCommandIter<'a> {
 
 impl fmt::Debug for RenderCommandIter<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("RenderCommandIter")
-            .field("array", &self.array)
-            .field("index", &self.index)
-            .finish()
+        f.debug_list().entries(self.array).finish()
     }
 }
 
