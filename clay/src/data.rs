@@ -29,13 +29,7 @@ impl String<'_> {
 
 impl fmt::Debug for String<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let s = if self.length == 0 {
-            ""
-        } else {
-            let bytes =
-                unsafe { slice::from_raw_parts(self.chars as *const u8, self.length as usize) };
-            std::str::from_utf8(bytes).unwrap_or(&"<invalid UTF-8")
-        };
+        let s = if self.length == 0 { "" } else { (*self).into() };
         f.debug_struct("String").field("chars", &s).finish()
     }
 }
@@ -48,6 +42,14 @@ impl<'a> From<&'a str> for String<'a> {
             chars: s.as_ptr() as *const c_char,
             _lifetime_marker: PhantomData,
         }
+    }
+}
+
+impl<'a> From<String<'a>> for &'a str {
+    #[inline]
+    fn from(s: String<'a>) -> &'a str {
+        let bytes = unsafe { slice::from_raw_parts(s.chars as *const u8, s.length as usize) };
+        std::str::from_utf8(bytes).unwrap_or("<invalid UTF-8")
     }
 }
 
