@@ -19,7 +19,7 @@ extern "C" fn measure_text(text: &clay::String, config: &clay::Text) -> clay::Di
     let size = macroquad::text::measure_text((*text).into(), Some(font), config.font_size, 1.0);
     clay::Dimensions {
         width: size.width,
-        height: size.height,
+        height: size.height + size.offset_y,
     }
 }
 
@@ -33,6 +33,7 @@ impl MacroquadRenderer {
 }
 
 // Emulate raylib draw_ring using draw_arc
+#[allow(clippy::too_many_arguments)]
 fn draw_ring(
     x: f32,
     y: f32,
@@ -44,8 +45,8 @@ fn draw_ring(
     color: clay::Color,
 ) {
     draw_arc(
-        x,                                   // x: break Vector2 into components
-        y,                                   // y
+        x,
+        y,
         segments,                            // sides: use segments directly
         (inner_radius + outer_radius) / 2.0, // radius: use average of inner/outer as center radius
         start_angle,                         // rotation: use start_angle as base rotation
@@ -228,10 +229,10 @@ struct Color(clay::Color);
 impl From<Color> for macroquad::color::Color {
     fn from(color: Color) -> Self {
         macroquad::color::Color {
-            r: color.0.r,
-            g: color.0.g,
-            b: color.0.b,
-            a: color.0.a,
+            r: color.0.r / 255.,
+            g: color.0.g / 255.,
+            b: color.0.b / 255.,
+            a: color.0.a / 255.,
         }
     }
 }

@@ -4,7 +4,7 @@ use crate::system::{
     MeasureTextCallback, QueryScrollOffsetCallback, RenderCommand, RenderCommandArray,
 };
 use crate::ui;
-use std::os::raw::{c_float, c_int, c_void};
+use std::os::raw::{c_float, c_void};
 
 #[link(name = "clay")]
 extern "C" {
