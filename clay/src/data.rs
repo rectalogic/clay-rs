@@ -134,6 +134,9 @@ pub struct ElementId<'a> {
 }
 
 impl ElementId<'_> {
+    pub fn find(id: String) -> Self {
+        unsafe { external::Clay_GetElementId(id) }
+    }
     // clay: Clay_PointerOver
     pub fn is_pointer_over(&self) -> bool {
         unsafe { external::Clay_PointerOver(*self) }
@@ -163,6 +166,17 @@ pub struct CornerRadius {
     pub top_right: c_float,
     pub bottom_left: c_float,
     pub bottom_right: c_float,
+}
+
+impl CornerRadius {
+    pub fn new(radius: f32) -> Self {
+        Self {
+            top_left: radius,
+            top_right: radius,
+            bottom_left: radius,
+            bottom_right: radius,
+        }
+    }
 }
 
 #[packed_enum]

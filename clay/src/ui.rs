@@ -216,7 +216,7 @@ impl From<Image> for Item<'_> {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 // clay: Clay_FloatingElementConfig
 // clay: CLAY_FLOATING
 pub struct Floating {
@@ -250,7 +250,7 @@ impl From<Custom> for Item<'_> {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 // clay: Clay_ScrollElementConfig
 // clay: CLAY_SCROLL
 pub struct Scroll {
