@@ -3,7 +3,7 @@ use crate::external;
 use crate::system::{ElementConfigType, ElementConfigUnion};
 use std::fmt;
 use std::os::raw::c_float;
-use std::os::raw::{c_int, c_void};
+use std::os::raw::c_void;
 pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, isize);
 
 pub struct Builder(pub(crate) ());
