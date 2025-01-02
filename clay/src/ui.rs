@@ -1,86 +1,97 @@
 use crate::data;
 use crate::external;
 use crate::system::{ElementConfigType, ElementConfigUnion};
+use std::fmt;
+use std::os::raw::c_float;
 use std::os::raw::{c_int, c_void};
-
-pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, *const c_int);
+pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, isize);
 
 pub struct Builder(pub(crate) ());
 
 impl Builder {
+    fn handle_item(item: &Item<'_>) {
+        match *item {
+            Item::Id(id) => unsafe {
+                external::Clay__AttachId(external::Clay__HashString(id, 0, 0))
+            },
+            Item::IdI(id, i) => unsafe {
+                external::Clay__AttachId(external::Clay__HashString(id, i, 0))
+            },
+            Item::Layout(layout) => unsafe {
+                external::Clay__AttachLayoutConfig(external::Clay__StoreLayoutConfig(layout))
+            },
+            Item::Rectangle(rectangle) => unsafe {
+                external::Clay__AttachElementConfig(
+                    ElementConfigUnion {
+                        rectangle_element_config: external::Clay__StoreRectangleElementConfig(
+                            rectangle,
+                        ),
+                    },
+                    ElementConfigType::Rectangle,
+                )
+            },
+            Item::Text(text, config) => unsafe {
+                external::Clay__OpenTextElement(
+                    text,
+                    external::Clay__StoreTextElementConfig(config),
+                )
+            },
+            Item::Image(image) => unsafe {
+                external::Clay__AttachElementConfig(
+                    ElementConfigUnion {
+                        image_element_config: external::Clay__StoreImageElementConfig(image),
+                    },
+                    ElementConfigType::Image,
+                )
+            },
+            Item::Floating(floating) => unsafe {
+                external::Clay__AttachElementConfig(
+                    ElementConfigUnion {
+                        floating_element_config: external::Clay__StoreFloatingElementConfig(
+                            floating,
+                        ),
+                    },
+                    ElementConfigType::FloatingContainer,
+                )
+            },
+            Item::Custom(custom) => unsafe {
+                external::Clay__AttachElementConfig(
+                    ElementConfigUnion {
+                        custom_element_config: external::Clay__StoreCustomElementConfig(custom),
+                    },
+                    ElementConfigType::Custom,
+                )
+            },
+            Item::Scroll(scroll) => unsafe {
+                external::Clay__AttachElementConfig(
+                    ElementConfigUnion {
+                        scroll_element_config: external::Clay__StoreScrollElementConfig(scroll),
+                    },
+                    ElementConfigType::ScrollContainer,
+                )
+            },
+            Item::Border(border) => unsafe {
+                external::Clay__AttachElementConfig(
+                    ElementConfigUnion {
+                        border_element_config: external::Clay__StoreBorderElementConfig(border),
+                    },
+                    ElementConfigType::BorderContainer,
+                )
+            },
+            Item::Deferred(deferred) => {
+                if let Some(item) = deferred.0() {
+                    Self::handle_item(&item);
+                }
+            }
+        }
+    }
+
     // clay: CLAY macro
     pub fn build<F: FnOnce(&Self)>(&self, items: &[Item<'_>], build_children: F) {
         unsafe { external::Clay__OpenElement() };
+
         for item in items {
-            match *item {
-                Item::Id(id) => unsafe {
-                    external::Clay__AttachId(external::Clay__HashString(id, 0, 0))
-                },
-                Item::IdI(id, i) => unsafe {
-                    external::Clay__AttachId(external::Clay__HashString(id, i, 0))
-                },
-                Item::Layout(layout) => unsafe {
-                    external::Clay__AttachLayoutConfig(external::Clay__StoreLayoutConfig(layout))
-                },
-                Item::Rectangle(rectangle) => unsafe {
-                    external::Clay__AttachElementConfig(
-                        ElementConfigUnion {
-                            rectangle_element_config: external::Clay__StoreRectangleElementConfig(
-                                rectangle,
-                            ),
-                        },
-                        ElementConfigType::Rectangle,
-                    )
-                },
-                Item::Text(text, config) => unsafe {
-                    external::Clay__OpenTextElement(
-                        text,
-                        external::Clay__StoreTextElementConfig(config),
-                    )
-                },
-                Item::Image(image) => unsafe {
-                    external::Clay__AttachElementConfig(
-                        ElementConfigUnion {
-                            image_element_config: external::Clay__StoreImageElementConfig(image),
-                        },
-                        ElementConfigType::Image,
-                    )
-                },
-                Item::Floating(floating) => unsafe {
-                    external::Clay__AttachElementConfig(
-                        ElementConfigUnion {
-                            floating_element_config: external::Clay__StoreFloatingElementConfig(
-                                floating,
-                            ),
-                        },
-                        ElementConfigType::FloatingContainer,
-                    )
-                },
-                Item::Custom(custom) => unsafe {
-                    external::Clay__AttachElementConfig(
-                        ElementConfigUnion {
-                            custom_element_config: external::Clay__StoreCustomElementConfig(custom),
-                        },
-                        ElementConfigType::Custom,
-                    )
-                },
-                Item::Scroll(scroll) => unsafe {
-                    external::Clay__AttachElementConfig(
-                        ElementConfigUnion {
-                            scroll_element_config: external::Clay__StoreScrollElementConfig(scroll),
-                        },
-                        ElementConfigType::ScrollContainer,
-                    )
-                },
-                Item::Border(border) => unsafe {
-                    external::Clay__AttachElementConfig(
-                        ElementConfigUnion {
-                            border_element_config: external::Clay__StoreBorderElementConfig(border),
-                        },
-                        ElementConfigType::BorderContainer,
-                    )
-                },
-            }
+            Self::handle_item(item);
         }
 
         unsafe { external::Clay__ElementPostConfiguration() };
@@ -88,16 +99,6 @@ impl Builder {
         build_children(self);
 
         unsafe { external::Clay__CloseElement() };
-    }
-
-    // clay: Clay_OnHover
-    pub fn set_on_hover_callback(on_hover: OnHoverCallback, user_data: isize) {
-        unsafe { external::Clay_OnHover(on_hover, user_data) };
-    }
-
-    // clay: Clay_Hovered
-    pub fn hovered(&self) -> bool {
-        unsafe { external::Clay_Hovered() }
     }
 }
 
@@ -113,6 +114,52 @@ pub enum Item<'a> {
     Custom(Custom),
     Scroll(Scroll),
     Border(Border),
+    Deferred(&'a Deferred<'a>),
+}
+
+impl Item<'_> {
+    // clay: Clay_OnHover
+    pub fn set_on_hover_callback(on_hover: OnHoverCallback, user_data: isize) {
+        unsafe { external::Clay_OnHover(on_hover, user_data) };
+    }
+
+    // clay: Clay_Hovered
+    pub fn is_hovered() -> bool {
+        unsafe { external::Clay_Hovered() }
+    }
+
+    // clay: Clay_SetPointerState
+    pub fn set_pointer_state(position: data::Vector2, pointer_down: bool) {
+        unsafe { external::Clay_SetPointerState(position, pointer_down) };
+    }
+    // clay: Clay_UpdateScrollContainers
+    pub fn update_scroll_containers(
+        enable_drag_scrolling: bool,
+        scroll_delta: data::Vector2,
+        delta_time: f32,
+    ) {
+        unsafe {
+            external::Clay_UpdateScrollContainers(
+                enable_drag_scrolling,
+                scroll_delta,
+                delta_time as c_float,
+            )
+        };
+    }
+}
+
+pub struct Deferred<'a>(pub &'a dyn Fn() -> Option<Item<'a>>);
+
+impl<'a> From<&'a Deferred<'a>> for Item<'a> {
+    fn from(deferred: &'a Deferred<'a>) -> Self {
+        Item::Deferred(deferred)
+    }
+}
+
+impl fmt::Debug for Deferred<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Deferred").finish()
+    }
 }
 
 #[derive(Debug, Copy, Clone)]

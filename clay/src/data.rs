@@ -106,7 +106,7 @@ pub struct BoundingBox {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 // clay: Clay_PointerDataInteractionState
 pub enum PointerDataInteractionState {
     PressedThisFrame,
@@ -119,8 +119,8 @@ pub enum PointerDataInteractionState {
 #[derive(Debug, Copy, Clone)]
 // clay: Clay_PointerData
 pub struct PointerData {
-    position: Vector2,
-    state: PointerDataInteractionState,
+    pub position: Vector2,
+    pub state: PointerDataInteractionState,
 }
 
 #[repr(C)]

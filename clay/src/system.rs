@@ -3,7 +3,7 @@ use clay_macros::packed_enum;
 use std::{
     fmt,
     marker::PhantomData,
-    os::raw::{c_float, c_int, c_void},
+    os::raw::{c_int, c_void},
 };
 
 pub type MeasureTextCallback = extern "C" fn(&data::String, &ui::Text) -> data::Dimensions;
@@ -57,7 +57,7 @@ impl Default for ErrorHandler<'_> {
 }
 
 pub trait Renderer {
-    fn get_layout_dimensions(&self) -> data::Dimensions;
+    fn prepare_frame(&self) -> data::Dimensions;
     fn render(&self, render_commands: &mut RenderCommandIter<'_>);
 }
 
@@ -120,24 +120,6 @@ impl<'a> Arena<'a> {
     ) {
         unsafe { external::Clay_SetQueryScrollOffsetFunction(query_scroll_offset_callback) };
     }
-    // clay: Clay_SetPointerState
-    pub fn set_pointer_state(position: data::Vector2, pointer_down: bool) {
-        unsafe { external::Clay_SetPointerState(position, pointer_down) };
-    }
-    // clay: Clay_UpdateScrollContainers
-    pub fn update_scroll_containers(
-        enable_drag_scrolling: bool,
-        scroll_delta: data::Vector2,
-        delta_time: f32,
-    ) {
-        unsafe {
-            external::Clay_UpdateScrollContainers(
-                enable_drag_scrolling,
-                scroll_delta,
-                delta_time as c_float,
-            )
-        };
-    }
     // clay: Clay_SetLayoutDimensions
     fn set_layout_dimensions(dimensions: data::Dimensions) {
         unsafe { external::Clay_SetLayoutDimensions(dimensions) };
@@ -145,7 +127,7 @@ impl<'a> Arena<'a> {
 
     // clay: Clay_BeginLayout/Clay_EndLayout
     pub fn render<'b, F: FnOnce(&ui::Builder)>(&'b mut self, renderer: &impl Renderer, ui: F) {
-        Arena::set_layout_dimensions(renderer.get_layout_dimensions());
+        Arena::set_layout_dimensions(renderer.prepare_frame());
         unsafe { external::Clay_BeginLayout() };
         ui(&ui::Builder(()));
         self.render_commands = unsafe { external::Clay_EndLayout() }.into_iter();
