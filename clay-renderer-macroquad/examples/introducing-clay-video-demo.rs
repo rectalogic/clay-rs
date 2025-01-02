@@ -62,7 +62,7 @@ async fn main() {
                 ..d()
             }
             .into()],
-            |builder| {
+            Some(|builder: &clay::Builder| {
                 builder.build(
                     &[clay::Text {
                         font_id: font_id_body_16,
@@ -71,9 +71,9 @@ async fn main() {
                         ..d()
                     }
                     .with(text)],
-                    |_| {},
+                    None as clay::NoChildren,
                 );
-            },
+            }),
         );
     };
 
@@ -91,7 +91,7 @@ async fn main() {
                 }
                 .into(),
             ],
-            |builder| {
+            Some(|builder: &clay::Builder| {
                 builder.build(
                     &[clay::Text {
                         font_id: font_id_body_16,
@@ -100,9 +100,9 @@ async fn main() {
                         ..d()
                     }
                     .with(text)],
-                    |_| {},
+                    None as clay::NoChildren,
                 );
-            },
+            }),
         );
     };
 
@@ -137,7 +137,7 @@ async fn main() {
                     }
                     .into(),
                 ],
-                |builder| {
+                Some(|builder: &clay::Builder| {
                     builder.build(
                         &[
                             clay::Id("HeaderBar".into()).into(),
@@ -157,7 +157,7 @@ async fn main() {
                             }
                             .into(),
                         ],
-                        |builder| {
+                        Some(|builder: &clay::Builder| {
                             builder.build(
                                 &[
                                     clay::Id("FileButton".into()).into(),
@@ -172,7 +172,7 @@ async fn main() {
                                     }
                                     .into(),
                                 ],
-                                |builder| {
+                                Some(|builder: &clay::Builder| {
                                     builder.build(
                                         &[clay::Text {
                                             font_id: font_id_body_16,
@@ -181,7 +181,7 @@ async fn main() {
                                             ..d()
                                         }
                                         .with("File".into())],
-                                        |_| {},
+                                        None as clay::NoChildren,
                                     );
 
                                     let file_menu_visible =
@@ -209,7 +209,7 @@ async fn main() {
                                             }
                                             .into(),
                                         ],
-                                        |builder| {
+                                        Some(|builder: &clay::Builder| {
                                             builder.build(
                                                 &[
                                                     clay::Layout {
@@ -228,7 +228,7 @@ async fn main() {
                                                     }
                                                     .into(),
                                                 ],
-                                                |builder| {
+                                                Some(|builder: &clay::Builder| {
                                                     // Render dropdown items here
                                                     render_dropdown_menu_item(
                                                         builder,
@@ -242,12 +242,12 @@ async fn main() {
                                                         builder,
                                                         "Close".into(),
                                                     );
-                                                },
+                                                }),
                                             );
-                                        },
+                                        }),
                                     );
                                     }
-                                },
+                                }),
                             );
                             render_header_button(builder, "Edit".into());
                             builder.build(
@@ -259,12 +259,12 @@ async fn main() {
                                     ..d()
                                 }
                                 .into()],
-                                |_| {},
+                                None as clay::NoChildren,
                             );
                             render_header_button(builder, "Upload".into());
                             render_header_button(builder, "Media".into());
                             render_header_button(builder, "Support".into());
-                        },
+                        }),
                     );
 
                     builder.build(
@@ -277,7 +277,7 @@ async fn main() {
                             }
                             .into(),
                         ],
-                        |builder| {
+                        Some(|builder: &clay::Builder| {
                             builder.build(
                                 &[
                                     clay::Id("Sidebar".into()).into(),
@@ -294,7 +294,7 @@ async fn main() {
                                     }
                                     .into(),
                                 ],
-                                |builder| {
+                                Some(|builder: &clay::Builder| {
                                     for (i, document) in documents.iter().enumerate() {
                                         let sidebar_button_layout = clay::Layout {
                                             sizing: clay::Sizing {
@@ -336,7 +336,7 @@ async fn main() {
                                                 sidebar_button_layout.into(),
                                                 (&clay::Deferred(&rectangle_fn)).into(),
                                             ],
-                                            |builder| {
+                                            Some(|builder: &clay::Builder| {
                                                 builder.build(
                                                     &[clay::Text {
                                                         font_id: font_id_body_16,
@@ -347,12 +347,12 @@ async fn main() {
                                                         ..d()
                                                     }
                                                     .with(document.title)],
-                                                    |_| {},
+                                                    None as clay::NoChildren,
                                                 );
-                                            },
+                                            }),
                                         );
                                     }
-                                },
+                                }),
                             );
 
                             builder.build(
@@ -373,7 +373,7 @@ async fn main() {
                                     }
                                     .into(),
                                 ],
-                                |builder| {
+                                Some(|builder: &clay::Builder| {
                                     let selected_document = &documents[selected_document_index];
                                     builder.build(
                                         &[
@@ -392,13 +392,13 @@ async fn main() {
                                             }
                                             .with(selected_document.contents),
                                         ],
-                                        |_| {},
+                                        None as clay::NoChildren,
                                     );
-                                },
+                                }),
                             );
-                        },
+                        }),
                     );
-                },
+                }),
             );
         });
 
