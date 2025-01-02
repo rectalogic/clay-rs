@@ -7,7 +7,21 @@ struct Document<'a> {
     contents: clay::String<'a>,
 }
 
-#[macroquad::main("Introducing Clay Demo")]
+const WINDOW_SIZE: clay::Dimensions = clay::Dimensions {
+    width: 1024.0,
+    height: 768.0,
+};
+
+fn window_conf() -> Conf {
+    Conf {
+        window_title: String::from("Introducing Clay Demo"),
+        window_width: WINDOW_SIZE.width as i32,
+        window_height: WINDOW_SIZE.height as i32,
+        ..Default::default()
+    }
+}
+
+#[macroquad::main(window_conf)]
 async fn main() {
     let documents =     [
         Document{ title: "Squirrels".into(), contents: "The Secret Life of Squirrels: Nature's Clever Acrobats\nSquirrels are often overlooked creatures, dismissed as mere park inhabitants or backyard nuisances. Yet, beneath their fluffy tails and twitching noses lies an intricate world of cunning, agility, and survival tactics that are nothing short of fascinating. As one of the most common mammals in North America, squirrels have adapted to a wide range of environments from bustling urban centers to tranquil forests and have developed a variety of unique behaviors that continue to intrigue scientists and nature enthusiasts alike.\n\nMaster Tree Climbers\nAt the heart of a squirrel's skill set is its impressive ability to navigate trees with ease. Whether they're darting from branch to branch or leaping across wide gaps, squirrels possess an innate talent for acrobatics. Their powerful hind legs, which are longer than their front legs, give them remarkable jumping power. With a tail that acts as a counterbalance, squirrels can leap distances of up to ten times the length of their body, making them some of the best aerial acrobats in the animal kingdom.\nBut it's not just their agility that makes them exceptional climbers. Squirrels' sharp, curved claws allow them to grip tree bark with precision, while the soft pads on their feet provide traction on slippery surfaces. Their ability to run at high speeds and scale vertical trunks with ease is a testament to the evolutionary adaptations that have made them so successful in their arboreal habitats.\n\nFood Hoarders Extraordinaire\nSquirrels are often seen frantically gathering nuts, seeds, and even fungi in preparation for winter. While this behavior may seem like instinctual hoarding, it is actually a survival strategy that has been honed over millions of years. Known as \"scatter hoarding,\" squirrels store their food in a variety of hidden locations, often burying it deep in the soil or stashing it in hollowed-out tree trunks.\nInterestingly, squirrels have an incredible memory for the locations of their caches. Research has shown that they can remember thousands of hiding spots, often returning to them months later when food is scarce. However, they don't always recover every stash some forgotten caches eventually sprout into new trees, contributing to forest regeneration. This unintentional role as forest gardeners highlights the ecological importance of squirrels in their ecosystems.\n\nThe Great Squirrel Debate: Urban vs. Wild\nWhile squirrels are most commonly associated with rural or wooded areas, their adaptability has allowed them to thrive in urban environments as well. In cities, squirrels have become adept at finding food sources in places like parks, streets, and even garbage cans. However, their urban counterparts face unique challenges, including traffic, predators, and the lack of natural shelters. Despite these obstacles, squirrels in urban areas are often observed using human infrastructure such as buildings, bridges, and power lines as highways for their acrobatic escapades.\nThere is, however, a growing concern regarding the impact of urban life on squirrel populations. Pollution, deforestation, and the loss of natural habitats are making it more difficult for squirrels to find adequate food and shelter. As a result, conservationists are focusing on creating squirrel-friendly spaces within cities, with the goal of ensuring these resourceful creatures continue to thrive in both rural and urban landscapes.\n\nA Symbol of Resilience\nIn many cultures, squirrels are symbols of resourcefulness, adaptability, and preparation. Their ability to thrive in a variety of environments while navigating challenges with agility and grace serves as a reminder of the resilience inherent in nature. Whether you encounter them in a quiet forest, a city park, or your own backyard, squirrels are creatures that never fail to amaze with their endless energy and ingenuity.\nIn the end, squirrels may be small, but they are mighty in their ability to survive and thrive in a world that is constantly changing. So next time you spot one hopping across a branch or darting across your lawn, take a moment to appreciate the remarkable acrobat at work a true marvel of the natural world.\n".into() },
@@ -20,8 +34,7 @@ async fn main() {
     let size: u32 = clay::Arena::min_memory_size();
     let memory = vec![0u8; size as usize];
     let arena = clay::Arena::new(&memory);
-    let dimensions = clay::Dimensions::new(1024.0, 768.0);
-    arena.initialize(dimensions, clay::default());
+    arena.initialize(WINDOW_SIZE, clay::default());
     let font = load_ttf_font(
         "clay/clay/examples/introducing-clay-video-demo/resources/Roboto-Regular.ttf",
     )
@@ -130,8 +143,8 @@ async fn main() {
                             content_background.into(),
                             clay::Layout {
                                 sizing: clay::Sizing {
-                                    width: clay::SizingAxis::fixed(60.),
-                                    height: clay::SizingAxis::grow(0., f32::MAX),
+                                    height: clay::SizingAxis::fixed(60.),
+                                    width: clay::SizingAxis::grow(0., f32::MAX),
                                 },
                                 padding: clay::Padding { x: 16, y: 0 },
                                 child_gap: 16,
@@ -159,13 +172,16 @@ async fn main() {
                                     .into(),
                                 ],
                                 |builder| {
-                                    clay::Text {
-                                        font_id: font_id_body_16,
-                                        font_size: 16,
-                                        text_color: clay::Color::rgb(255., 255., 255.),
-                                        ..clay::default()
-                                    }
-                                    .with("File".into());
+                                    builder.build(
+                                        &[clay::Text {
+                                            font_id: font_id_body_16,
+                                            font_size: 16,
+                                            text_color: clay::Color::rgb(255., 255., 255.),
+                                            ..clay::default()
+                                        }
+                                        .with("File".into())],
+                                        |_| {},
+                                    );
 
                                     let file_menu_visible =
                                         clay::ElementId::find("FileButton".into())
@@ -232,148 +248,152 @@ async fn main() {
                                     }
                                 },
                             );
-                        },
-                    );
-                    render_header_button(builder, "Edit".into());
-                    builder.build(
-                        &[clay::Layout {
-                            sizing: clay::Sizing {
-                                width: clay::SizingAxis::grow(0., f32::MAX),
-                                ..clay::default()
-                            },
-                            ..clay::default()
-                        }
-                        .into()],
-                        |_| {},
-                    );
-                    render_header_button(builder, "Upload".into());
-                    render_header_button(builder, "Media".into());
-                    render_header_button(builder, "Support".into());
-                },
-            );
-
-            builder.build(
-                &[
-                    clay::Id("LowerContent".into()).into(),
-                    clay::Layout {
-                        sizing: layout_expand,
-                        child_gap: 16,
-                        ..clay::default()
-                    }
-                    .into(),
-                ],
-                |builder| {
-                    builder.build(
-                        &[
-                            clay::Id("Sidebar".into()).into(),
-                            content_background.into(),
-                            clay::Layout {
-                                layout_direction: clay::LayoutDirection::TopToBottom,
-                                padding: clay::Padding { x: 16, y: 16 },
-                                child_gap: 8,
-                                sizing: clay::Sizing {
-                                    width: clay::SizingAxis::fixed(250.),
-                                    height: clay::SizingAxis::grow(0., f32::MAX),
-                                },
-                                ..clay::default()
-                            }
-                            .into(),
-                        ],
-                        |builder| {
-                            for (i, document) in documents.iter().enumerate() {
-                                let sidebar_button_layout = clay::Layout {
+                            render_header_button(builder, "Edit".into());
+                            builder.build(
+                                &[clay::Layout {
                                     sizing: clay::Sizing {
                                         width: clay::SizingAxis::grow(0., f32::MAX),
                                         ..clay::default()
                                     },
-                                    padding: clay::Padding { x: 16, y: 16 },
                                     ..clay::default()
-                                };
-
-                                let rectangle_fn = || {
-                                    if i == selected_document_index {
-                                        Some(clay::Item::Rectangle(clay::Rectangle {
-                                            color: clay::Color::rgb(120., 120., 120.),
-                                            corner_radius: clay::CornerRadius::new(8.),
-                                        }))
-                                    } else {
-                                        // XXX can't use closures with FFI
-                                        // clay::Item::set_on_hover_callback(
-                                        //     handle_sidebar_interaction,
-                                        //     i as isize,
-                                        // );
-                                        if clay::Item::is_hovered() {
-                                            // XXX this runs in the wrong element context
-                                            Some(clay::Item::Rectangle(clay::Rectangle {
-                                                color: clay::Color::rgba(120., 120., 120., 120.),
-                                                corner_radius: clay::CornerRadius::new(8.),
-                                            }))
-                                        } else {
-                                            None
-                                        }
-                                    }
-                                };
-
-                                builder.build(
-                                    &[
-                                        sidebar_button_layout.into(),
-                                        (&clay::Deferred(&rectangle_fn)).into(),
-                                    ],
-                                    |builder| {
-                                        builder.build(
-                                            &[clay::Text {
-                                                font_id: font_id_body_16,
-                                                font_size: 20,
-                                                text_color: clay::Color::rgb(255., 255., 255.),
-                                                ..clay::default()
-                                            }
-                                            .with(document.title)],
-                                            |_| {},
-                                        );
-                                    },
-                                );
-                            }
+                                }
+                                .into()],
+                                |_| {},
+                            );
+                            render_header_button(builder, "Upload".into());
+                            render_header_button(builder, "Media".into());
+                            render_header_button(builder, "Support".into());
                         },
                     );
 
                     builder.build(
                         &[
-                            clay::Id("MainContent".into()).into(),
-                            content_background.into(),
-                            clay::Scroll {
-                                vertical: true,
-                                ..clay::default()
-                            }
-                            .into(),
+                            clay::Id("LowerContent".into()).into(),
                             clay::Layout {
-                                layout_direction: clay::LayoutDirection::TopToBottom,
-                                child_gap: 16,
-                                padding: clay::Padding { x: 16, y: 16 },
                                 sizing: layout_expand,
+                                child_gap: 16,
                                 ..clay::default()
                             }
                             .into(),
                         ],
                         |builder| {
-                            let selected_document = &documents[selected_document_index];
                             builder.build(
                                 &[
-                                    clay::Text {
-                                        font_id: font_id_body_16,
-                                        font_size: 24,
-                                        text_color: clay::Color::rgb(255., 255., 255.),
+                                    clay::Id("Sidebar".into()).into(),
+                                    content_background.into(),
+                                    clay::Layout {
+                                        layout_direction: clay::LayoutDirection::TopToBottom,
+                                        padding: clay::Padding { x: 16, y: 16 },
+                                        child_gap: 8,
+                                        sizing: clay::Sizing {
+                                            width: clay::SizingAxis::fixed(250.),
+                                            height: clay::SizingAxis::grow(0., f32::MAX),
+                                        },
                                         ..clay::default()
                                     }
-                                    .with(selected_document.title),
-                                    clay::Text {
-                                        font_id: font_id_body_16,
-                                        font_size: 24,
-                                        text_color: clay::Color::rgb(255., 255., 255.),
-                                        ..clay::default()
-                                    }
-                                    .with(selected_document.contents),
+                                    .into(),
                                 ],
-                                |_| {},
+                                |builder| {
+                                    for (i, document) in documents.iter().enumerate() {
+                                        let sidebar_button_layout = clay::Layout {
+                                            sizing: clay::Sizing {
+                                                width: clay::SizingAxis::grow(0., f32::MAX),
+                                                ..clay::default()
+                                            },
+                                            padding: clay::Padding { x: 16, y: 16 },
+                                            ..clay::default()
+                                        };
+
+                                        let rectangle_fn = || {
+                                            if i == selected_document_index {
+                                                Some(clay::Item::Rectangle(clay::Rectangle {
+                                                    color: clay::Color::rgb(120., 120., 120.),
+                                                    corner_radius: clay::CornerRadius::new(8.),
+                                                }))
+                                            } else {
+                                                // XXX can't use closures with FFI
+                                                // clay::Item::set_on_hover_callback(
+                                                //     handle_sidebar_interaction,
+                                                //     i as isize,
+                                                // );
+                                                if clay::Item::is_hovered() {
+                                                    // XXX this runs in the wrong element context
+                                                    Some(clay::Item::Rectangle(clay::Rectangle {
+                                                        color: clay::Color::rgba(
+                                                            120., 120., 120., 120.,
+                                                        ),
+                                                        corner_radius: clay::CornerRadius::new(8.),
+                                                    }))
+                                                } else {
+                                                    None
+                                                }
+                                            }
+                                        };
+
+                                        builder.build(
+                                            &[
+                                                sidebar_button_layout.into(),
+                                                (&clay::Deferred(&rectangle_fn)).into(),
+                                            ],
+                                            |builder| {
+                                                builder.build(
+                                                    &[clay::Text {
+                                                        font_id: font_id_body_16,
+                                                        font_size: 20,
+                                                        text_color: clay::Color::rgb(
+                                                            255., 255., 255.,
+                                                        ),
+                                                        ..clay::default()
+                                                    }
+                                                    .with(document.title)],
+                                                    |_| {},
+                                                );
+                                            },
+                                        );
+                                    }
+                                },
+                            );
+
+                            builder.build(
+                                &[
+                                    clay::Id("MainContent".into()).into(),
+                                    content_background.into(),
+                                    clay::Scroll {
+                                        vertical: true,
+                                        ..clay::default()
+                                    }
+                                    .into(),
+                                    clay::Layout {
+                                        layout_direction: clay::LayoutDirection::TopToBottom,
+                                        child_gap: 16,
+                                        padding: clay::Padding { x: 16, y: 16 },
+                                        sizing: layout_expand,
+                                        ..clay::default()
+                                    }
+                                    .into(),
+                                ],
+                                |builder| {
+                                    let selected_document = &documents[selected_document_index];
+                                    builder.build(
+                                        &[
+                                            clay::Text {
+                                                font_id: font_id_body_16,
+                                                font_size: 24,
+                                                text_color: clay::Color::rgb(255., 255., 255.),
+                                                ..clay::default()
+                                            }
+                                            .with(selected_document.title),
+                                            clay::Text {
+                                                font_id: font_id_body_16,
+                                                font_size: 24,
+                                                text_color: clay::Color::rgb(255., 255., 255.),
+                                                ..clay::default()
+                                            }
+                                            .with(selected_document.contents),
+                                        ],
+                                        |_| {},
+                                    );
+                                },
                             );
                         },
                     );
