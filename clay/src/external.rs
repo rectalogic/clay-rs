@@ -62,6 +62,7 @@ extern "C" {
         offset: u32,
         seed: u32,
     ) -> data::ElementId<'a>;
+    pub(crate) fn Clay_GetElementId<'a>(id: data::String) -> data::ElementId<'a>;
     pub(crate) fn Clay_RenderCommandArray_Get<'a>(
         array: &RenderCommandArray<'a>,
         index: i32,
