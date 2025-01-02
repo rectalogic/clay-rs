@@ -228,20 +228,11 @@ pub struct ChildAlignment {
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 // clay: Clay_SizingMinMax
 pub struct SizingMinMax {
     pub min: c_float,
     pub max: c_float,
-}
-
-impl Default for SizingMinMax {
-    fn default() -> Self {
-        Self {
-            min: default(),
-            max: f32::MAX,
-        }
-    }
 }
 
 #[repr(C)]

@@ -1,3 +1,4 @@
+use clay::default as d;
 use macroquad::prelude::*;
 
 // Based on https://github.com/nicbarker/clay/tree/main/examples/introducing-clay-video-demo
@@ -34,7 +35,7 @@ async fn main() {
     let size: u32 = clay::Arena::min_memory_size();
     let memory = vec![0u8; size as usize];
     let arena = clay::Arena::new(&memory);
-    arena.initialize(WINDOW_SIZE, clay::default());
+    arena.initialize(WINDOW_SIZE, d());
     let font = load_ttf_font(
         "clay/clay/examples/introducing-clay-video-demo/resources/Roboto-Regular.ttf",
     )
@@ -58,7 +59,7 @@ async fn main() {
         builder.build(
             &[clay::Layout {
                 padding: clay::Padding { x: 16, y: 16 },
-                ..clay::default()
+                ..d()
             }
             .into()],
             |builder| {
@@ -67,7 +68,7 @@ async fn main() {
                         font_id: font_id_body_16,
                         font_size: 16,
                         text_color: clay::Color::rgb(255., 255., 255.),
-                        ..clay::default()
+                        ..d()
                     }
                     .with(text)],
                     |_| {},
@@ -81,7 +82,7 @@ async fn main() {
             &[
                 clay::Layout {
                     padding: clay::Padding { x: 16, y: 8 },
-                    ..clay::default()
+                    ..d()
                 }
                 .into(),
                 clay::Rectangle {
@@ -96,7 +97,7 @@ async fn main() {
                         font_id: font_id_body_16,
                         font_size: 16,
                         text_color: clay::Color::rgb(255., 255., 255.),
-                        ..clay::default()
+                        ..d()
                     }
                     .with(text)],
                     |_| {},
@@ -124,7 +125,7 @@ async fn main() {
                     clay::Id("OuterContainer".into()).into(),
                     clay::Rectangle {
                         color: clay::Color::rgb(43., 41., 51.),
-                        ..clay::default()
+                        ..d()
                     }
                     .into(),
                     clay::Layout {
@@ -132,7 +133,7 @@ async fn main() {
                         sizing: layout_expand,
                         padding: clay::Padding { x: 16, y: 16 },
                         child_gap: 16,
-                        ..clay::default()
+                        ..d()
                     }
                     .into(),
                 ],
@@ -150,9 +151,9 @@ async fn main() {
                                 child_gap: 16,
                                 child_alignment: clay::ChildAlignment {
                                     y: clay::LayoutAlignmentY::Center,
-                                    ..clay::default()
+                                    ..d()
                                 },
-                                ..clay::default()
+                                ..d()
                             }
                             .into(),
                         ],
@@ -162,7 +163,7 @@ async fn main() {
                                     clay::Id("FileButton".into()).into(),
                                     clay::Layout {
                                         padding: clay::Padding { x: 16, y: 16 },
-                                        ..clay::default()
+                                        ..d()
                                     }
                                     .into(),
                                     clay::Rectangle {
@@ -177,7 +178,7 @@ async fn main() {
                                             font_id: font_id_body_16,
                                             font_size: 16,
                                             text_color: clay::Color::rgb(255., 255., 255.),
-                                            ..clay::default()
+                                            ..d()
                                         }
                                         .with("File".into())],
                                         |_| {},
@@ -197,14 +198,14 @@ async fn main() {
                                                 attachment: clay::FloatingAttachPoints {
                                                     parent:
                                                         clay::FloatingAttachPointType::LeftBottom,
-                                                    ..clay::default()
+                                                    ..d()
                                                 },
-                                                ..clay::default()
+                                                ..d()
                                             }
                                             .into(),
                                             clay::Layout {
                                                 padding: clay::Padding { x: 0, y: 8 },
-                                                ..clay::default()
+                                                ..d()
                                             }
                                             .into(),
                                         ],
@@ -216,9 +217,9 @@ async fn main() {
                                                             clay::LayoutDirection::TopToBottom,
                                                         sizing: clay::Sizing {
                                                             width: clay::SizingAxis::fixed(200.),
-                                                            ..clay::default()
+                                                            ..d()
                                                         },
-                                                        ..clay::default()
+                                                        ..d()
                                                     }
                                                     .into(),
                                                     clay::Rectangle {
@@ -253,9 +254,9 @@ async fn main() {
                                 &[clay::Layout {
                                     sizing: clay::Sizing {
                                         width: clay::SizingAxis::grow(0., f32::MAX),
-                                        ..clay::default()
+                                        ..d()
                                     },
-                                    ..clay::default()
+                                    ..d()
                                 }
                                 .into()],
                                 |_| {},
@@ -272,7 +273,7 @@ async fn main() {
                             clay::Layout {
                                 sizing: layout_expand,
                                 child_gap: 16,
-                                ..clay::default()
+                                ..d()
                             }
                             .into(),
                         ],
@@ -289,7 +290,7 @@ async fn main() {
                                             width: clay::SizingAxis::fixed(250.),
                                             height: clay::SizingAxis::grow(0., f32::MAX),
                                         },
-                                        ..clay::default()
+                                        ..d()
                                     }
                                     .into(),
                                 ],
@@ -298,10 +299,10 @@ async fn main() {
                                         let sidebar_button_layout = clay::Layout {
                                             sizing: clay::Sizing {
                                                 width: clay::SizingAxis::grow(0., f32::MAX),
-                                                ..clay::default()
+                                                ..d()
                                             },
                                             padding: clay::Padding { x: 16, y: 16 },
-                                            ..clay::default()
+                                            ..d()
                                         };
 
                                         let rectangle_fn = || {
@@ -343,7 +344,7 @@ async fn main() {
                                                         text_color: clay::Color::rgb(
                                                             255., 255., 255.,
                                                         ),
-                                                        ..clay::default()
+                                                        ..d()
                                                     }
                                                     .with(document.title)],
                                                     |_| {},
@@ -360,7 +361,7 @@ async fn main() {
                                     content_background.into(),
                                     clay::Scroll {
                                         vertical: true,
-                                        ..clay::default()
+                                        ..d()
                                     }
                                     .into(),
                                     clay::Layout {
@@ -368,7 +369,7 @@ async fn main() {
                                         child_gap: 16,
                                         padding: clay::Padding { x: 16, y: 16 },
                                         sizing: layout_expand,
-                                        ..clay::default()
+                                        ..d()
                                     }
                                     .into(),
                                 ],
@@ -380,14 +381,14 @@ async fn main() {
                                                 font_id: font_id_body_16,
                                                 font_size: 24,
                                                 text_color: clay::Color::rgb(255., 255., 255.),
-                                                ..clay::default()
+                                                ..d()
                                             }
                                             .with(selected_document.title),
                                             clay::Text {
                                                 font_id: font_id_body_16,
                                                 font_size: 24,
                                                 text_color: clay::Color::rgb(255., 255., 255.),
-                                                ..clay::default()
+                                                ..d()
                                             }
                                             .with(selected_document.contents),
                                         ],
