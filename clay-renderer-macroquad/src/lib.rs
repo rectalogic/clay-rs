@@ -19,7 +19,7 @@ extern "C" fn measure_text(text: &clay::String, config: &clay::Text) -> clay::Di
     let size = macroquad::text::measure_text((*text).into(), Some(font), config.font_size, 1.0);
     clay::Dimensions {
         width: size.width,
-        height: size.height + size.offset_y,
+        height: size.height,
     }
 }
 
