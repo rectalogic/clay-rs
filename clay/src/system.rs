@@ -126,7 +126,7 @@ impl<'a> Arena<'a> {
     }
 
     // clay: Clay_BeginLayout/Clay_EndLayout
-    pub fn render<'b, F: FnOnce(&ui::Builder)>(&'b mut self, renderer: &impl Renderer, ui: F) {
+    pub fn render<F: FnOnce(&ui::Builder)>(&mut self, renderer: &impl Renderer, ui: F) {
         Arena::set_layout_dimensions(renderer.prepare_frame());
         unsafe { external::Clay_BeginLayout() };
         ui(&ui::Builder(()));

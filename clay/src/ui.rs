@@ -87,7 +87,7 @@ impl Builder {
     }
 
     // clay: CLAY macro
-    pub fn build<F: FnOnce(&Self)>(&self, items: &[Item<'_>], build_children: F) {
+    pub fn build<F: FnOnce(&Self)>(&self, items: &[Item<'_>], build_children: Option<F>) {
         unsafe { external::Clay__OpenElement() };
 
         for item in items {
@@ -96,11 +96,15 @@ impl Builder {
 
         unsafe { external::Clay__ElementPostConfiguration() };
 
-        build_children(self);
+        if let Some(build_children) = build_children {
+            build_children(self);
+        }
 
         unsafe { external::Clay__CloseElement() };
     }
 }
+
+pub type NoChildren = Option<fn(&Builder)>;
 
 #[derive(Debug, Copy, Clone)]
 pub enum Item<'a> {
