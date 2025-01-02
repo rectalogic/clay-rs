@@ -5,7 +5,7 @@ struct TestRenderer {
 }
 
 impl clay::Renderer for TestRenderer {
-    fn get_layout_dimensions(&self) -> clay::Dimensions {
+    fn prepare_frame(&self) -> clay::Dimensions {
         clay::Dimensions {
             width: 300.0,
             height: 300.0,
