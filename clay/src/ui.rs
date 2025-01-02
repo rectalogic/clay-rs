@@ -9,7 +9,7 @@ pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, isi
 pub struct Builder(pub(crate) ());
 
 impl Builder {
-    fn handle_item(item: &Item<'_>) {
+    fn attach_item(item: &Item<'_>) {
         match *item {
             Item::Id(id) => unsafe {
                 external::Clay__AttachId(external::Clay__HashString(id, 0, 0))
@@ -80,7 +80,7 @@ impl Builder {
             },
             Item::Deferred(deferred) => {
                 if let Some(item) = deferred.0() {
-                    Self::handle_item(&item);
+                    Self::attach_item(&item);
                 }
             }
         }
@@ -91,7 +91,7 @@ impl Builder {
         unsafe { external::Clay__OpenElement() };
 
         for item in items {
-            Self::handle_item(item);
+            Self::attach_item(item);
         }
 
         unsafe { external::Clay__ElementPostConfiguration() };
