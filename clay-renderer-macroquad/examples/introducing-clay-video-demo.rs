@@ -189,59 +189,65 @@ async fn main() {
                                     );
                                 },
                                 |builder: &clay::Builder| {
-                                    builder.build(|builder| {
-                                        builder.attach(
-                                            clay::Text {
-                                                font_id: font_id_body_16,
-                                                font_size: 16,
-                                                text_color: clay::Color::rgb(255., 255., 255.),
-                                                ..d()
-                                            }
-                                            .with("File".into()),
-                                        );
+                                    builder.attach(
+                                        clay::Text {
+                                            font_id: font_id_body_16,
+                                            font_size: 16,
+                                            text_color: clay::Color::rgb(255., 255., 255.),
+                                            ..d()
+                                        }
+                                        .with("File".into()),
+                                    );
+                                    let file_menu_visible =
+                                        clay::ElementId::find("FileButton".into())
+                                            .is_pointer_over()
+                                            || clay::ElementId::find("FileMenu".into())
+                                                .is_pointer_over();
 
-                                        let file_menu_visible =
-                                            clay::ElementId::find("FileButton".into())
-                                                .is_pointer_over()
-                                                || clay::ElementId::find("FileMenu".into())
-                                                    .is_pointer_over();
-
-                                        if file_menu_visible {
-                                            builder.build(|builder| {
+                                    if file_menu_visible {
+                                        builder.build(
+                                            |builder| {
                                                 builder.attach(clay::Id("FileMenu".into()).into());
                                                 builder.attach(clay::Floating {
-                                                    attachment: clay::FloatingAttachPoints {
-                                                        parent:
-                                                            clay::FloatingAttachPointType::LeftBottom,
-                                                        ..d()
-                                                    },
+                                                attachment: clay::FloatingAttachPoints {
+                                                    parent:
+                                                        clay::FloatingAttachPointType::LeftBottom,
                                                     ..d()
-                                                }
-                                                .into());
-                                                builder.attach(clay::Layout {
+                                                },
+                                                ..d()
+                                            }
+                                            .into());
+                                                builder.attach(
+                                                    clay::Layout {
                                                         padding: clay::Padding { x: 0, y: 8 },
                                                         ..d()
                                                     }
-                                                    .into());
+                                                    .into(),
+                                                );
                                             },
                                             |builder: &clay::Builder| {
                                                 builder.build(
                                                     |builder| {
                                                         builder.attach(clay::Layout {
-                                                            layout_direction:
-                                                                clay::LayoutDirection::TopToBottom,
-                                                            sizing: clay::Sizing {
-                                                                width: clay::SizingAxis::fixed(200.),
-                                                                ..d()
-                                                            },
-                                                            ..d()
-                                                        }
-                                                        .into());
-                                                    builder.attach(clay::Rectangle {
-                                                            color: clay::Color::rgb(40., 40., 40.),
-                                                            corner_radius: clay::CornerRadius::new(8.),
-                                                        }
-                                                        .into());
+                                                    layout_direction:
+                                                        clay::LayoutDirection::TopToBottom,
+                                                    sizing: clay::Sizing {
+                                                        width: clay::SizingAxis::fixed(200.),
+                                                        ..d()
+                                                    },
+                                                    ..d()
+                                                }
+                                                .into());
+                                                        builder.attach(
+                                                            clay::Rectangle {
+                                                                color: clay::Color::rgb(
+                                                                    40., 40., 40.,
+                                                                ),
+                                                                corner_radius:
+                                                                    clay::CornerRadius::new(8.),
+                                                            }
+                                                            .into(),
+                                                        );
                                                     },
                                                     |builder: &clay::Builder| {
                                                         // Render dropdown items here
@@ -257,25 +263,28 @@ async fn main() {
                                                             builder,
                                                             "Close".into(),
                                                         );
-                                                    }
+                                                    },
                                                 );
-                                            });
-                                        }
-                                    }, clay::no_children);
-                                }
+                                            },
+                                        );
+                                    }
+                                },
                             );
                             render_header_button(builder, "Edit".into());
                             builder.build(
                                 |builder| {
-                                   builder.attach(clay::Layout {
-                                    sizing: clay::Sizing {
-                                        width: clay::SizingAxis::grow(0., f32::MAX),
-                                        ..d()
-                                    },
-                                    ..d()
-                                }
-                                .into())},
-                                 clay::no_children,
+                                    builder.attach(
+                                        clay::Layout {
+                                            sizing: clay::Sizing {
+                                                width: clay::SizingAxis::grow(0., f32::MAX),
+                                                ..d()
+                                            },
+                                            ..d()
+                                        }
+                                        .into(),
+                                    )
+                                },
+                                clay::no_children,
                             );
                             render_header_button(builder, "Upload".into());
                             render_header_button(builder, "Media".into());
@@ -286,29 +295,33 @@ async fn main() {
                     builder.build(
                         |builder| {
                             builder.attach(clay::Id("LowerContent".into()).into());
-                            builder.attach(clay::Layout {
-                                sizing: layout_expand,
-                                child_gap: 16,
-                                ..d()
-                            }
-                            .into());
+                            builder.attach(
+                                clay::Layout {
+                                    sizing: layout_expand,
+                                    child_gap: 16,
+                                    ..d()
+                                }
+                                .into(),
+                            );
                         },
                         |builder| {
                             builder.build(
                                 |builder| {
                                     builder.attach(clay::Id("Sidebar".into()).into());
                                     builder.attach(content_background.into());
-                                    builder.attach(clay::Layout {
-                                        layout_direction: clay::LayoutDirection::TopToBottom,
-                                        padding: clay::Padding { x: 16, y: 16 },
-                                        child_gap: 8,
-                                        sizing: clay::Sizing {
-                                            width: clay::SizingAxis::fixed(250.),
-                                            height: clay::SizingAxis::grow(0., f32::MAX),
-                                        },
-                                        ..d()
-                                    }
-                                    .into());
+                                    builder.attach(
+                                        clay::Layout {
+                                            layout_direction: clay::LayoutDirection::TopToBottom,
+                                            padding: clay::Padding { x: 16, y: 16 },
+                                            child_gap: 8,
+                                            sizing: clay::Sizing {
+                                                width: clay::SizingAxis::fixed(250.),
+                                                height: clay::SizingAxis::grow(0., f32::MAX),
+                                            },
+                                            ..d()
+                                        }
+                                        .into(),
+                                    );
                                 },
                                 |builder| {
                                     for (i, document) in documents.iter().enumerate() {
@@ -325,10 +338,17 @@ async fn main() {
                                             |builder| {
                                                 builder.attach(sidebar_button_layout.into());
                                                 if i == selected_document_index {
-                                                    builder.attach(clay::Rectangle {
-                                                        color: clay::Color::rgb(120., 120., 120.),
-                                                        corner_radius: clay::CornerRadius::new(8.),
-                                                    }.into());
+                                                    builder.attach(
+                                                        clay::Rectangle {
+                                                            color: clay::Color::rgb(
+                                                                120., 120., 120.,
+                                                            ),
+                                                            corner_radius: clay::CornerRadius::new(
+                                                                8.,
+                                                            ),
+                                                        }
+                                                        .into(),
+                                                    );
                                                 } else {
                                                     // XXX can't use closures with FFI
                                                     // clay::Item::set_on_hover_callback(
@@ -336,29 +356,35 @@ async fn main() {
                                                     //     i as isize,
                                                     // );
                                                     if clay::Item::is_hovered() {
-                                                        builder.attach(clay::Rectangle {
-                                                            color: clay::Color::rgba(
-                                                                120., 120., 120., 120.,
-                                                            ),
-                                                            corner_radius: clay::CornerRadius::new(8.),
-                                                        }.into());
+                                                        builder.attach(
+                                                            clay::Rectangle {
+                                                                color: clay::Color::rgba(
+                                                                    120., 120., 120., 120.,
+                                                                ),
+                                                                corner_radius:
+                                                                    clay::CornerRadius::new(8.),
+                                                            }
+                                                            .into(),
+                                                        );
                                                     }
                                                 }
                                             },
                                             |builder| {
                                                 builder.build(
                                                     |builder| {
-                                                        builder.attach(clay::Text {
-                                                        font_id: font_id_body_16,
-                                                        font_size: 20,
-                                                        text_color: clay::Color::rgb(
-                                                            255., 255., 255.,
-                                                        ),
-                                                        ..d()
-                                                    }
-                                                    .with(document.title));
+                                                        builder.attach(
+                                                            clay::Text {
+                                                                font_id: font_id_body_16,
+                                                                font_size: 20,
+                                                                text_color: clay::Color::rgb(
+                                                                    255., 255., 255.,
+                                                                ),
+                                                                ..d()
+                                                            }
+                                                            .with(document.title),
+                                                        );
                                                     },
-                                                     clay::no_children,
+                                                    clay::no_children,
                                                 );
                                             },
                                         );
@@ -370,40 +396,48 @@ async fn main() {
                                 |builder| {
                                     builder.attach(clay::Id("MainContent".into()).into());
                                     builder.attach(content_background.into());
-                                    builder.attach(clay::Scroll {
-                                        vertical: true,
-                                        ..d()
-                                    }
-                                    .into());
-                                builder.attach(clay::Layout {
-                                        layout_direction: clay::LayoutDirection::TopToBottom,
-                                        child_gap: 16,
-                                        padding: clay::Padding { x: 16, y: 16 },
-                                        sizing: layout_expand,
-                                        ..d()
-                                    }
-                                    .into());
+                                    builder.attach(
+                                        clay::Scroll {
+                                            vertical: true,
+                                            ..d()
+                                        }
+                                        .into(),
+                                    );
+                                    builder.attach(
+                                        clay::Layout {
+                                            layout_direction: clay::LayoutDirection::TopToBottom,
+                                            child_gap: 16,
+                                            padding: clay::Padding { x: 16, y: 16 },
+                                            sizing: layout_expand,
+                                            ..d()
+                                        }
+                                        .into(),
+                                    );
                                 },
                                 |builder| {
                                     let selected_document = &documents[selected_document_index];
                                     builder.build(
                                         |builder| {
-                                            builder.attach(clay::Text {
-                                                font_id: font_id_body_16,
-                                                font_size: 24,
-                                                text_color: clay::Color::rgb(255., 255., 255.),
-                                                ..d()
-                                            }
-                                            .with(selected_document.title));
-                                        builder.attach(clay::Text {
-                                                font_id: font_id_body_16,
-                                                font_size: 24,
-                                                text_color: clay::Color::rgb(255., 255., 255.),
-                                                ..d()
-                                            }
-                                            .with(selected_document.contents));
+                                            builder.attach(
+                                                clay::Text {
+                                                    font_id: font_id_body_16,
+                                                    font_size: 24,
+                                                    text_color: clay::Color::rgb(255., 255., 255.),
+                                                    ..d()
+                                                }
+                                                .with(selected_document.title),
+                                            );
+                                            builder.attach(
+                                                clay::Text {
+                                                    font_id: font_id_body_16,
+                                                    font_size: 24,
+                                                    text_color: clay::Color::rgb(255., 255., 255.),
+                                                    ..d()
+                                                }
+                                                .with(selected_document.contents),
+                                            );
                                         },
-                                         clay::no_children,
+                                        clay::no_children,
                                     );
                                 },
                             );
