@@ -229,15 +229,15 @@ async fn main() {
                                                 builder.build(
                                                     |builder| {
                                                         builder.attach(clay::Layout {
-                                                    layout_direction:
-                                                        clay::LayoutDirection::TopToBottom,
-                                                    sizing: clay::Sizing {
-                                                        width: clay::SizingAxis::fixed(200.),
-                                                        ..d()
-                                                    },
-                                                    ..d()
-                                                }
-                                                .into());
+                                                            layout_direction:
+                                                                clay::LayoutDirection::TopToBottom,
+                                                            sizing: clay::Sizing {
+                                                                width: clay::SizingAxis::fixed(200.),
+                                                                ..d()
+                                                            },
+                                                            ..d()
+                                                        }
+                                                        .into());
                                                         builder.attach(
                                                             clay::Rectangle {
                                                                 color: clay::Color::rgb(
