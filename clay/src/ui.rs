@@ -1,91 +1,17 @@
 use crate::data;
 use crate::external;
 use crate::system::{ElementConfigType, ElementConfigUnion};
-use std::fmt;
 use std::os::raw::c_float;
 use std::os::raw::c_void;
 pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, isize);
 
+pub trait Element {
+    fn attach(&self, builder: &crate::ui::Builder);
+}
+
 pub struct Builder(pub(crate) ());
 
 impl Builder {
-    pub fn attach(&self, item: Item<'_>) {
-        match item {
-            Item::Id(id) => unsafe {
-                external::Clay__AttachId(external::Clay__HashString(id, 0, 0))
-            },
-            Item::IdI(id, i) => unsafe {
-                external::Clay__AttachId(external::Clay__HashString(id, i, 0))
-            },
-            Item::Layout(layout) => unsafe {
-                external::Clay__AttachLayoutConfig(external::Clay__StoreLayoutConfig(layout))
-            },
-            Item::Rectangle(rectangle) => unsafe {
-                external::Clay__AttachElementConfig(
-                    ElementConfigUnion {
-                        rectangle_element_config: external::Clay__StoreRectangleElementConfig(
-                            rectangle,
-                        ),
-                    },
-                    ElementConfigType::Rectangle,
-                )
-            },
-            Item::Text(text, config) => unsafe {
-                external::Clay__OpenTextElement(
-                    text,
-                    external::Clay__StoreTextElementConfig(config),
-                )
-            },
-            Item::Image(image) => unsafe {
-                external::Clay__AttachElementConfig(
-                    ElementConfigUnion {
-                        image_element_config: external::Clay__StoreImageElementConfig(image),
-                    },
-                    ElementConfigType::Image,
-                )
-            },
-            Item::Floating(floating) => unsafe {
-                external::Clay__AttachElementConfig(
-                    ElementConfigUnion {
-                        floating_element_config: external::Clay__StoreFloatingElementConfig(
-                            floating,
-                        ),
-                    },
-                    ElementConfigType::FloatingContainer,
-                )
-            },
-            Item::Custom(custom) => unsafe {
-                external::Clay__AttachElementConfig(
-                    ElementConfigUnion {
-                        custom_element_config: external::Clay__StoreCustomElementConfig(custom),
-                    },
-                    ElementConfigType::Custom,
-                )
-            },
-            Item::Scroll(scroll) => unsafe {
-                external::Clay__AttachElementConfig(
-                    ElementConfigUnion {
-                        scroll_element_config: external::Clay__StoreScrollElementConfig(scroll),
-                    },
-                    ElementConfigType::ScrollContainer,
-                )
-            },
-            Item::Border(border) => unsafe {
-                external::Clay__AttachElementConfig(
-                    ElementConfigUnion {
-                        border_element_config: external::Clay__StoreBorderElementConfig(border),
-                    },
-                    ElementConfigType::BorderContainer,
-                )
-            },
-            Item::Deferred(deferred) => {
-                if let Some(item) = deferred.0() {
-                    self.attach(item);
-                }
-            }
-        }
-    }
-
     // clay: CLAY macro
     pub fn build<FI, FC>(&self, items: FI, children: FC)
     where
@@ -102,26 +28,7 @@ impl Builder {
 
         unsafe { external::Clay__CloseElement() };
     }
-}
 
-pub fn no_children(_: &Builder) {}
-
-#[derive(Debug, Copy, Clone)]
-pub enum Item<'a> {
-    Id(data::String<'a>),
-    IdI(data::String<'a>, u32),
-    Layout(Layout),
-    Rectangle(Rectangle),
-    Text(data::String<'a>, Text),
-    Image(Image),
-    Floating(Floating),
-    Custom(Custom),
-    Scroll(Scroll),
-    Border(Border),
-    Deferred(&'a Deferred<'a>),
-}
-
-impl Item<'_> {
     // clay: Clay_OnHover
     pub fn set_on_hover_callback(on_hover: OnHoverCallback, user_data: isize) {
         unsafe { external::Clay_OnHover(on_hover, user_data) };
@@ -152,27 +59,15 @@ impl Item<'_> {
     }
 }
 
-pub struct Deferred<'a>(pub &'a dyn Fn() -> Option<Item<'a>>);
-
-impl<'a> From<&'a Deferred<'a>> for Item<'a> {
-    fn from(deferred: &'a Deferred<'a>) -> Self {
-        Item::Deferred(deferred)
-    }
-}
-
-impl fmt::Debug for Deferred<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Deferred").finish()
-    }
-}
+pub fn no_children(_: &Builder) {}
 
 #[derive(Debug, Copy, Clone)]
 // clay: CLAY_ID
 pub struct Id<'a>(pub data::String<'a>);
 
-impl<'a> From<Id<'a>> for Item<'a> {
-    fn from(id: Id<'a>) -> Self {
-        Item::Id(id.0)
+impl Element for Id<'_> {
+    fn attach(&self, _builder: &Builder) {
+        unsafe { external::Clay__AttachId(external::Clay__HashString(self.0, 0, 0)) };
     }
 }
 
@@ -180,9 +75,9 @@ impl<'a> From<Id<'a>> for Item<'a> {
 // clay: CLAY_IDI
 pub struct IdI<'a>(pub data::String<'a>, pub u32);
 
-impl<'a> From<IdI<'a>> for Item<'a> {
-    fn from(id: IdI<'a>) -> Self {
-        Item::IdI(id.0, id.1)
+impl Element for IdI<'_> {
+    fn attach(&self, _builder: &Builder) {
+        unsafe { external::Clay__AttachId(external::Clay__HashString(self.0, self.1, 0)) };
     }
 }
 
@@ -198,9 +93,9 @@ pub struct Layout {
     pub layout_direction: data::LayoutDirection,
 }
 
-impl From<Layout> for Item<'_> {
-    fn from(layout: Layout) -> Self {
-        Item::Layout(layout)
+impl Element for Layout {
+    fn attach(&self, _builder: &Builder) {
+        unsafe { external::Clay__AttachLayoutConfig(external::Clay__StoreLayoutConfig(*self)) };
     }
 }
 
@@ -214,9 +109,16 @@ pub struct Rectangle {
     // CLAY_EXTEND_CONFIG_RECTANGLE
 }
 
-impl From<Rectangle> for Item<'_> {
-    fn from(rectangle: Rectangle) -> Self {
-        Item::Rectangle(rectangle)
+impl Element for Rectangle {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__AttachElementConfig(
+                ElementConfigUnion {
+                    rectangle_element_config: external::Clay__StoreRectangleElementConfig(*self),
+                },
+                ElementConfigType::Rectangle,
+            )
+        };
     }
 }
 
@@ -235,9 +137,16 @@ pub struct Text {
 }
 
 impl Text {
-    // clay: CLAY_TEXT
-    pub fn with<'a>(&self, text: data::String<'a>) -> Item<'a> {
-        Item::Text(text, *self)
+    pub fn with<'a>(&self, text: data::String<'a>) -> (data::String<'a>, Text) {
+        (text, *self)
+    }
+}
+
+impl Element for (data::String<'_>, Text) {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__OpenTextElement(self.0, external::Clay__StoreTextElementConfig(self.1))
+        };
     }
 }
 
@@ -260,9 +169,16 @@ impl Default for Image {
     }
 }
 
-impl From<Image> for Item<'_> {
-    fn from(image: Image) -> Self {
-        Item::Image(image)
+impl Element for Image {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__AttachElementConfig(
+                ElementConfigUnion {
+                    image_element_config: external::Clay__StoreImageElementConfig(*self),
+                },
+                ElementConfigType::Image,
+            )
+        };
     }
 }
 
@@ -279,9 +195,16 @@ pub struct Floating {
     pub pointer_capture_mode: data::PointerCaptureMode,
 }
 
-impl From<Floating> for Item<'_> {
-    fn from(floating: Floating) -> Self {
-        Item::Floating(floating)
+impl Element for Floating {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__AttachElementConfig(
+                ElementConfigUnion {
+                    floating_element_config: external::Clay__StoreFloatingElementConfig(*self),
+                },
+                ElementConfigType::FloatingContainer,
+            )
+        };
     }
 }
 
@@ -294,9 +217,16 @@ pub struct Custom {
     // CLAY_EXTEND_CONFIG_CUSTOM
 }
 
-impl From<Custom> for Item<'_> {
-    fn from(custom: Custom) -> Self {
-        Item::Custom(custom)
+impl Element for Custom {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__AttachElementConfig(
+                ElementConfigUnion {
+                    custom_element_config: external::Clay__StoreCustomElementConfig(*self),
+                },
+                ElementConfigType::Custom,
+            )
+        };
     }
 }
 
@@ -309,9 +239,16 @@ pub struct Scroll {
     pub vertical: bool,
 }
 
-impl From<Scroll> for Item<'_> {
-    fn from(scroll: Scroll) -> Self {
-        Item::Scroll(scroll)
+impl Element for Scroll {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__AttachElementConfig(
+                ElementConfigUnion {
+                    scroll_element_config: external::Clay__StoreScrollElementConfig(*self),
+                },
+                ElementConfigType::ScrollContainer,
+            )
+        };
     }
 }
 
@@ -390,8 +327,15 @@ impl Border {
     }
 }
 
-impl From<Border> for Item<'_> {
-    fn from(border: Border) -> Self {
-        Item::Border(border)
+impl Element for Border {
+    fn attach(&self, _builder: &Builder) {
+        unsafe {
+            external::Clay__AttachElementConfig(
+                ElementConfigUnion {
+                    border_element_config: external::Clay__StoreBorderElementConfig(*self),
+                },
+                ElementConfigType::BorderContainer,
+            )
+        };
     }
 }

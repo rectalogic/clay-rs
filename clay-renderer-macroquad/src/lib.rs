@@ -60,14 +60,14 @@ impl clay::Renderer for MacroquadRenderer {
     fn prepare_frame(&self) -> clay::Dimensions {
         let mouse_position = mouse_position();
         let scroll_delta = mouse_wheel();
-        clay::Item::set_pointer_state(
+        clay::Builder::set_pointer_state(
             clay::Vector2 {
                 x: mouse_position.0,
                 y: mouse_position.1,
             },
             is_mouse_button_down(MouseButton::Left),
         );
-        clay::Item::update_scroll_containers(
+        clay::Builder::update_scroll_containers(
             true,
             clay::Vector2 {
                 x: scroll_delta.0,

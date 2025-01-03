@@ -1,4 +1,4 @@
-use clay::Builder;
+use clay::prelude::*;
 use macroquad::prelude::*;
 
 #[macroquad::main("Simple")]
@@ -21,22 +21,19 @@ async fn main() {
         arena.render(&renderer, |builder| {
             builder.build(
                 |builder| {
-                    builder.attach(
-                        clay::Layout {
-                            layout_direction: clay::LayoutDirection::TopToBottom,
-                            padding: clay::Padding { x: 16, y: 16 },
-                            child_gap: 16,
-                            ..clay::default()
-                        }
-                        .into(),
-                    );
-                    builder.attach(
-                        clay::Rectangle {
-                            color: clay::Color::rgb(255., 0., 0.),
-                            ..clay::default()
-                        }
-                        .into(),
-                    );
+                    clay::Layout {
+                        layout_direction: clay::LayoutDirection::TopToBottom,
+                        padding: clay::Padding { x: 16, y: 16 },
+                        child_gap: 16,
+                        ..clay::default()
+                    }
+                    .attach(builder);
+
+                    clay::Rectangle {
+                        color: clay::Color::rgb(255., 0., 0.),
+                        ..clay::default()
+                    }
+                    .attach(builder);
                 },
                 |builder| {
                     child_rect(builder, clay::Color::rgb(0., 255., 0.), font_id);
@@ -50,38 +47,34 @@ async fn main() {
     }
 }
 
-fn child_rect(builder: &Builder, color: clay::Color, font_id: u16) {
+fn child_rect(builder: &clay::Builder, color: clay::Color, font_id: u16) {
     builder.build(
         |builder| {
-            builder.attach(
-                clay::Layout {
-                    padding: clay::Padding { x: 16, y: 16 },
-                    sizing: clay::Sizing {
-                        height: clay::SizingAxis::fixed(80.),
-                        ..clay::default()
-                    },
+            clay::Layout {
+                padding: clay::Padding { x: 16, y: 16 },
+                sizing: clay::Sizing {
+                    height: clay::SizingAxis::fixed(80.),
                     ..clay::default()
-                }
-                .into(),
-            );
-            builder.attach(
-                clay::Rectangle {
-                    color,
-                    ..clay::default()
-                }
-                .into(),
-            );
+                },
+                ..clay::default()
+            }
+            .attach(builder);
+
+            clay::Rectangle {
+                color,
+                ..clay::default()
+            }
+            .attach(builder);
         },
         |builder| {
-            builder.attach(
-                clay::Text {
-                    font_id,
-                    font_size: 18,
-                    text_color: clay::Color::rgb(0., 0., 0.),
-                    ..clay::default()
-                }
-                .with("Foobar".into()),
-            );
+            clay::Text {
+                font_id,
+                font_size: 18,
+                text_color: clay::Color::rgb(0., 0., 0.),
+                ..clay::default()
+            }
+            .with("Foobar".into())
+            .attach(builder);
         },
     );
 }

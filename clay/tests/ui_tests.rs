@@ -1,3 +1,4 @@
+use clay::prelude::*;
 use std::iter::zip;
 
 struct TestRenderer {
@@ -58,63 +59,59 @@ fn test_simple_ui() {
     arena.render(&renderer, |builder| {
         builder.build(
             |builder| {
-                builder.attach(clay::IdI(clay::String::from("HeroBlob"), 1).into());
-                builder.attach(
-                    clay::Layout {
-                        sizing: clay::Sizing {
-                            width: clay::SizingAxis::grow(0.0, 480.0),
-                            ..clay::default()
-                        },
-                        padding: clay::Padding { x: 16, y: 16 },
-                        child_gap: 16,
-                        child_alignment: clay::ChildAlignment {
-                            y: clay::LayoutAlignmentY::Center,
-                            ..clay::default()
-                        },
+                clay::IdI(clay::String::from("HeroBlob"), 1).attach(builder);
+                clay::Layout {
+                    sizing: clay::Sizing {
+                        width: clay::SizingAxis::grow(0.0, 480.0),
                         ..clay::default()
-                    }
-                    .into(),
-                );
-                builder.attach(clay::Border::outside_radius(2, color, 10.0).into());
+                    },
+                    padding: clay::Padding { x: 16, y: 16 },
+                    child_gap: 16,
+                    child_alignment: clay::ChildAlignment {
+                        y: clay::LayoutAlignmentY::Center,
+                        ..clay::default()
+                    },
+                    ..clay::default()
+                }
+                .attach(builder);
+                clay::Border::outside_radius(2, color, 10.0).attach(builder);
             },
             |builder| {
                 builder.build(
                     |builder| {
-                        builder.attach(clay::Id(clay::String::from("CheckImage")).into());
-                        builder.attach(
-                            clay::Layout {
-                                sizing: clay::Sizing {
-                                    width: clay::SizingAxis::fixed(32.),
-                                    ..clay::default()
-                                },
+                        clay::Id(clay::String::from("CheckImage")).attach(builder);
+
+                        clay::Layout {
+                            sizing: clay::Sizing {
+                                width: clay::SizingAxis::fixed(32.),
                                 ..clay::default()
-                            }
-                            .into(),
-                        );
-                        builder.attach(
-                            clay::Image {
-                                source_dimensions: clay::Dimensions {
-                                    width: 128.,
-                                    height: 128.,
-                                },
-                                ..clay::default()
-                            }
-                            .into(),
-                        ); // XXX need extended sourceUrl
+                            },
+                            ..clay::default()
+                        }
+                        .attach(builder);
+
+                        clay::Image {
+                            // XXX need extended sourceUrl
+                            source_dimensions: clay::Dimensions {
+                                width: 128.,
+                                height: 128.,
+                            },
+                            ..clay::default()
+                        }
+                        .attach(builder);
                     },
                     clay::no_children,
                 );
                 builder.build(
                     |builder| {
-                        builder.attach(
-                            clay::Text {
-                                font_size: 18,
-                                font_id: FONT_ID_BODY_24,
-                                text_color: color,
-                                ..clay::default()
-                            }
-                            .with(clay::String::from("Some text here")),
-                        );
+                        clay::Text {
+                            font_size: 18,
+                            font_id: FONT_ID_BODY_24,
+                            text_color: color,
+                            ..clay::default()
+                        }
+                        .with(clay::String::from("Some text here"))
+                        .attach(builder);
                     },
                     clay::no_children,
                 );

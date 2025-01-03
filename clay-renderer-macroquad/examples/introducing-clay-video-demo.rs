@@ -1,4 +1,5 @@
 use clay::default as d;
+use clay::prelude::*;
 use macroquad::prelude::*;
 
 // Based on https://github.com/nicbarker/clay/tree/main/examples/introducing-clay-video-demo
@@ -58,24 +59,21 @@ async fn main() {
     let render_dropdown_menu_item = |builder: &clay::Builder, text: clay::String| {
         builder.build(
             |builder| {
-                builder.attach(
-                    clay::Layout {
-                        padding: clay::Padding { x: 16, y: 16 },
-                        ..d()
-                    }
-                    .into(),
-                );
+                clay::Layout {
+                    padding: clay::Padding { x: 16, y: 16 },
+                    ..d()
+                }
+                .attach(builder);
             },
             |builder| {
-                builder.attach(
-                    clay::Text {
-                        font_id: font_id_body_16,
-                        font_size: 16,
-                        text_color: clay::Color::rgb(255., 255., 255.),
-                        ..d()
-                    }
-                    .with(text),
-                );
+                clay::Text {
+                    font_id: font_id_body_16,
+                    font_size: 16,
+                    text_color: clay::Color::rgb(255., 255., 255.),
+                    ..d()
+                }
+                .with(text)
+                .attach(builder);
             },
         );
     };
@@ -83,31 +81,23 @@ async fn main() {
     let render_header_button = |builder: &clay::Builder, text: clay::String| {
         builder.build(
             |builder| {
-                builder.attach(
-                    clay::Layout {
-                        padding: clay::Padding { x: 16, y: 8 },
-                        ..d()
-                    }
-                    .into(),
-                );
-                builder.attach(
-                    clay::Rectangle {
-                        color: clay::Color::rgb(140., 140., 140.),
-                        corner_radius: clay::CornerRadius::new(5.),
-                    }
-                    .into(),
-                );
+                clay::Layout {
+                    padding: clay::Padding { x: 16, y: 8 },
+                    ..d()
+                }.attach(builder);
+                clay::Rectangle {
+                    color: clay::Color::rgb(140., 140., 140.),
+                    corner_radius: clay::CornerRadius::new(5.),
+                }.attach(builder);
             },
             |builder| {
-                builder.attach(
-                    clay::Text {
-                        font_id: font_id_body_16,
-                        font_size: 16,
-                        text_color: clay::Color::rgb(255., 255., 255.),
-                        ..d()
-                    }
-                    .with(text),
-                );
+                clay::Text {
+                    font_id: font_id_body_16,
+                    font_size: 16,
+                    text_color: clay::Color::rgb(255., 255., 255.),
+                    ..d()
+                }
+                .with(text).attach(builder);
             },
         );
     };
@@ -128,76 +118,65 @@ async fn main() {
         arena.render(&renderer, |builder| {
             builder.build(
                 |builder| {
-                    builder.attach(clay::Id("OuterContainer".into()).into());
-                    builder.attach(
-                        clay::Rectangle {
-                            color: clay::Color::rgb(43., 41., 51.),
-                            ..d()
-                        }
-                        .into(),
-                    );
-                    builder.attach(
-                        clay::Layout {
-                            layout_direction: clay::LayoutDirection::TopToBottom,
-                            sizing: layout_expand,
-                            padding: clay::Padding { x: 16, y: 16 },
-                            child_gap: 16,
-                            ..d()
-                        }
-                        .into(),
-                    );
+                    clay::Id("OuterContainer".into()).attach(builder);
+                    clay::Rectangle {
+                        color: clay::Color::rgb(43., 41., 51.),
+                        ..d()
+                    }
+                    .attach(builder);
+                    clay::Layout {
+                        layout_direction: clay::LayoutDirection::TopToBottom,
+                        sizing: layout_expand,
+                        padding: clay::Padding { x: 16, y: 16 },
+                        child_gap: 16,
+                        ..d()
+                    }
+                    .attach(builder);
                 },
                 |builder| {
                     builder.build(
                         |builder| {
-                            builder.attach(clay::Id("HeaderBar".into()).into());
-                            builder.attach(content_background.into());
-                            builder.attach(
-                                clay::Layout {
-                                    sizing: clay::Sizing {
-                                        height: clay::SizingAxis::fixed(60.),
-                                        width: clay::SizingAxis::grow(0., f32::MAX),
-                                    },
-                                    padding: clay::Padding { x: 16, y: 0 },
-                                    child_gap: 16,
-                                    child_alignment: clay::ChildAlignment {
-                                        y: clay::LayoutAlignmentY::Center,
-                                        ..d()
-                                    },
+                            clay::Id("HeaderBar".into()).attach(builder);
+                            content_background.attach(builder);
+                            clay::Layout {
+                                sizing: clay::Sizing {
+                                    height: clay::SizingAxis::fixed(60.),
+                                    width: clay::SizingAxis::grow(0., f32::MAX),
+                                },
+                                padding: clay::Padding { x: 16, y: 0 },
+                                child_gap: 16,
+                                child_alignment: clay::ChildAlignment {
+                                    y: clay::LayoutAlignmentY::Center,
                                     ..d()
-                                }
-                                .into(),
-                            );
+                                },
+                                ..d()
+                            }
+                            .attach(builder);
                         },
                         |builder| {
                             builder.build(
                                 |builder| {
-                                    builder.attach(clay::Id("FileButton".into()).into());
-                                    builder.attach(
-                                        clay::Layout {
-                                            padding: clay::Padding { x: 16, y: 16 },
-                                            ..d()
-                                        }
-                                        .into(),
-                                    );
-                                    builder.attach(
-                                        clay::Rectangle {
-                                            color: clay::Color::rgb(140., 140., 140.),
-                                            corner_radius: clay::CornerRadius::new(5.),
-                                        }
-                                        .into(),
-                                    );
+                                    clay::Id("FileButton".into()).attach(builder);
+                                    clay::Layout {
+                                        padding: clay::Padding { x: 16, y: 16 },
+                                        ..d()
+                                    }
+                                    .attach(builder);
+                                    clay::Rectangle {
+                                        color: clay::Color::rgb(140., 140., 140.),
+                                        corner_radius: clay::CornerRadius::new(5.),
+                                    }
+                                    .attach(builder);
                                 },
                                 |builder: &clay::Builder| {
-                                    builder.attach(
-                                        clay::Text {
-                                            font_id: font_id_body_16,
-                                            font_size: 16,
-                                            text_color: clay::Color::rgb(255., 255., 255.),
-                                            ..d()
-                                        }
-                                        .with("File".into()),
-                                    );
+                                    clay::Text {
+                                        font_id: font_id_body_16,
+                                        font_size: 16,
+                                        text_color: clay::Color::rgb(255., 255., 255.),
+                                        ..d()
+                                    }
+                                    .with("File".into()).attach(builder);
+                               
                                     let file_menu_visible =
                                         clay::ElementId::find("FileButton".into())
                                             .is_pointer_over()
@@ -207,28 +186,26 @@ async fn main() {
                                     if file_menu_visible {
                                         builder.build(
                                             |builder| {
-                                                builder.attach(clay::Id("FileMenu".into()).into());
-                                                builder.attach(clay::Floating {
-                                                attachment: clay::FloatingAttachPoints {
-                                                    parent:
-                                                        clay::FloatingAttachPointType::LeftBottom,
-                                                    ..d()
-                                                },
-                                                ..d()
-                                            }
-                                            .into());
-                                                builder.attach(
-                                                    clay::Layout {
-                                                        padding: clay::Padding { x: 0, y: 8 },
+                                                clay::Id("FileMenu".into()).attach(builder);
+                                                clay::Floating {
+                                                    attachment: clay::FloatingAttachPoints {
+                                                        parent:
+                                                            clay::FloatingAttachPointType::LeftBottom,
                                                         ..d()
-                                                    }
-                                                    .into(),
-                                                );
+                                                    },
+                                                    ..d()
+                                                }
+                                                .attach(builder);
+                                                clay::Layout {
+                                                    padding: clay::Padding { x: 0, y: 8 },
+                                                    ..d()
+                                                }
+                                                .attach(builder);
                                             },
                                             |builder: &clay::Builder| {
                                                 builder.build(
                                                     |builder| {
-                                                        builder.attach(clay::Layout {
+                                                        clay::Layout {
                                                             layout_direction:
                                                                 clay::LayoutDirection::TopToBottom,
                                                             sizing: clay::Sizing {
@@ -237,17 +214,15 @@ async fn main() {
                                                             },
                                                             ..d()
                                                         }
-                                                        .into());
-                                                        builder.attach(
-                                                            clay::Rectangle {
-                                                                color: clay::Color::rgb(
-                                                                    40., 40., 40.,
-                                                                ),
-                                                                corner_radius:
-                                                                    clay::CornerRadius::new(8.),
-                                                            }
-                                                            .into(),
-                                                        );
+                                                        .attach(builder);
+                                                        clay::Rectangle {
+                                                            color: clay::Color::rgb(
+                                                                40., 40., 40.,
+                                                            ),
+                                                            corner_radius:
+                                                                clay::CornerRadius::new(8.),
+                                                        }
+                                                        .attach(builder);
                                                     },
                                                     |builder: &clay::Builder| {
                                                         // Render dropdown items here
@@ -273,16 +248,14 @@ async fn main() {
                             render_header_button(builder, "Edit".into());
                             builder.build(
                                 |builder| {
-                                    builder.attach(
-                                        clay::Layout {
-                                            sizing: clay::Sizing {
-                                                width: clay::SizingAxis::grow(0., f32::MAX),
-                                                ..d()
-                                            },
+                                    clay::Layout {
+                                        sizing: clay::Sizing {
+                                            width: clay::SizingAxis::grow(0., f32::MAX),
                                             ..d()
-                                        }
-                                        .into(),
-                                    )
+                                        },
+                                        ..d()
+                                    }
+                                    .attach(builder);
                                 },
                                 clay::no_children,
                             );
@@ -294,34 +267,30 @@ async fn main() {
 
                     builder.build(
                         |builder| {
-                            builder.attach(clay::Id("LowerContent".into()).into());
-                            builder.attach(
-                                clay::Layout {
-                                    sizing: layout_expand,
-                                    child_gap: 16,
-                                    ..d()
-                                }
-                                .into(),
-                            );
+                            clay::Id("LowerContent".into()).attach(builder);
+                            clay::Layout {
+                                sizing: layout_expand,
+                                child_gap: 16,
+                                ..d()
+                            }
+                            .attach(builder);
                         },
                         |builder| {
                             builder.build(
                                 |builder| {
-                                    builder.attach(clay::Id("Sidebar".into()).into());
-                                    builder.attach(content_background.into());
-                                    builder.attach(
-                                        clay::Layout {
-                                            layout_direction: clay::LayoutDirection::TopToBottom,
-                                            padding: clay::Padding { x: 16, y: 16 },
-                                            child_gap: 8,
-                                            sizing: clay::Sizing {
-                                                width: clay::SizingAxis::fixed(250.),
-                                                height: clay::SizingAxis::grow(0., f32::MAX),
-                                            },
-                                            ..d()
-                                        }
-                                        .into(),
-                                    );
+                                    clay::Id("Sidebar".into()).attach(builder);
+                                    content_background.attach(builder);
+                                    clay::Layout {
+                                        layout_direction: clay::LayoutDirection::TopToBottom,
+                                        padding: clay::Padding { x: 16, y: 16 },
+                                        child_gap: 8,
+                                        sizing: clay::Sizing {
+                                            width: clay::SizingAxis::fixed(250.),
+                                            height: clay::SizingAxis::grow(0., f32::MAX),
+                                        },
+                                        ..d()
+                                    }
+                                    .attach(builder);
                                 },
                                 |builder| {
                                     for (i, document) in documents.iter().enumerate() {
@@ -336,53 +305,47 @@ async fn main() {
 
                                         builder.build(
                                             |builder| {
-                                                builder.attach(sidebar_button_layout.into());
+                                                sidebar_button_layout.attach(builder);
                                                 if i == selected_document_index {
-                                                    builder.attach(
-                                                        clay::Rectangle {
-                                                            color: clay::Color::rgb(
-                                                                120., 120., 120.,
-                                                            ),
-                                                            corner_radius: clay::CornerRadius::new(
-                                                                8.,
-                                                            ),
-                                                        }
-                                                        .into(),
-                                                    );
+                                                    clay::Rectangle {
+                                                        color: clay::Color::rgb(
+                                                            120., 120., 120.,
+                                                        ),
+                                                        corner_radius: clay::CornerRadius::new(
+                                                            8.,
+                                                        ),
+                                                    }
+                                                    .attach(builder);
                                                 } else {
                                                     // XXX can't use closures with FFI
-                                                    // clay::Item::set_on_hover_callback(
+                                                    // clay::Builder::set_on_hover_callback(
                                                     //     handle_sidebar_interaction,
                                                     //     i as isize,
                                                     // );
-                                                    if clay::Item::is_hovered() {
-                                                        builder.attach(
-                                                            clay::Rectangle {
-                                                                color: clay::Color::rgba(
-                                                                    120., 120., 120., 120.,
-                                                                ),
-                                                                corner_radius:
-                                                                    clay::CornerRadius::new(8.),
-                                                            }
-                                                            .into(),
-                                                        );
+                                                    if clay::Builder::is_hovered() {
+                                                        clay::Rectangle {
+                                                            color: clay::Color::rgba(
+                                                                120., 120., 120., 120.,
+                                                            ),
+                                                            corner_radius:
+                                                                clay::CornerRadius::new(8.),
+                                                        }
+                                                        .attach(builder);
                                                     }
                                                 }
                                             },
                                             |builder| {
                                                 builder.build(
                                                     |builder| {
-                                                        builder.attach(
-                                                            clay::Text {
-                                                                font_id: font_id_body_16,
-                                                                font_size: 20,
-                                                                text_color: clay::Color::rgb(
-                                                                    255., 255., 255.,
-                                                                ),
-                                                                ..d()
-                                                            }
-                                                            .with(document.title),
-                                                        );
+                                                        clay::Text {
+                                                            font_id: font_id_body_16,
+                                                            font_size: 20,
+                                                            text_color: clay::Color::rgb(
+                                                                255., 255., 255.,
+                                                            ),
+                                                            ..d()
+                                                        }
+                                                        .with(document.title).attach(builder);
                                                     },
                                                     clay::no_children,
                                                 );
@@ -394,48 +357,40 @@ async fn main() {
 
                             builder.build(
                                 |builder| {
-                                    builder.attach(clay::Id("MainContent".into()).into());
-                                    builder.attach(content_background.into());
-                                    builder.attach(
-                                        clay::Scroll {
-                                            vertical: true,
-                                            ..d()
-                                        }
-                                        .into(),
-                                    );
-                                    builder.attach(
-                                        clay::Layout {
-                                            layout_direction: clay::LayoutDirection::TopToBottom,
-                                            child_gap: 16,
-                                            padding: clay::Padding { x: 16, y: 16 },
-                                            sizing: layout_expand,
-                                            ..d()
-                                        }
-                                        .into(),
-                                    );
+                                    clay::Id("MainContent".into()).attach(builder);
+                                    content_background.attach(builder);
+                                    clay::Scroll {
+                                        vertical: true,
+                                        ..d()
+                                    }
+                                    .attach(builder);
+                                    clay::Layout {
+                                        layout_direction: clay::LayoutDirection::TopToBottom,
+                                        child_gap: 16,
+                                        padding: clay::Padding { x: 16, y: 16 },
+                                        sizing: layout_expand,
+                                        ..d()
+                                    }
+                                    .attach(builder);
                                 },
                                 |builder| {
                                     let selected_document = &documents[selected_document_index];
                                     builder.build(
                                         |builder| {
-                                            builder.attach(
-                                                clay::Text {
-                                                    font_id: font_id_body_16,
-                                                    font_size: 24,
-                                                    text_color: clay::Color::rgb(255., 255., 255.),
-                                                    ..d()
-                                                }
-                                                .with(selected_document.title),
-                                            );
-                                            builder.attach(
-                                                clay::Text {
-                                                    font_id: font_id_body_16,
-                                                    font_size: 24,
-                                                    text_color: clay::Color::rgb(255., 255., 255.),
-                                                    ..d()
-                                                }
-                                                .with(selected_document.contents),
-                                            );
+                                            clay::Text {
+                                                font_id: font_id_body_16,
+                                                font_size: 24,
+                                                text_color: clay::Color::rgb(255., 255., 255.),
+                                                ..d()
+                                            }
+                                            .with(selected_document.title).attach(builder);
+                                            clay::Text {
+                                                font_id: font_id_body_16,
+                                                font_size: 24,
+                                                text_color: clay::Color::rgb(255., 255., 255.),
+                                                ..d()
+                                            }
+                                            .with(selected_document.contents).attach(builder);
                                         },
                                         clay::no_children,
                                     );
