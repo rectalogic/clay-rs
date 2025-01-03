@@ -126,10 +126,14 @@ impl<'a> Arena<'a> {
     }
 
     // clay: Clay_BeginLayout/Clay_EndLayout
-    pub fn render<F: FnOnce(&ui::Builder)>(&mut self, renderer: &impl Renderer, ui: F) {
+    pub fn render<F>(&mut self, renderer: &impl Renderer, ui: F)
+    where
+        F: FnOnce(&ui::Builder),
+    {
         Arena::set_layout_dimensions(renderer.prepare_frame());
         unsafe { external::Clay_BeginLayout() };
-        ui(&ui::Builder(()));
+        let builder = &ui::Builder(());
+        ui(builder);
         self.render_commands = unsafe { external::Clay_EndLayout() }.into_iter();
         renderer.render(&mut self.render_commands);
     }

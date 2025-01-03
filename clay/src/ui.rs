@@ -9,8 +9,8 @@ pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, isi
 pub struct Builder(pub(crate) ());
 
 impl Builder {
-    fn attach_item(item: &Item<'_>) {
-        match *item {
+    pub fn attach(&self, item: Item<'_>) {
+        match item {
             Item::Id(id) => unsafe {
                 external::Clay__AttachId(external::Clay__HashString(id, 0, 0))
             },
@@ -80,31 +80,31 @@ impl Builder {
             },
             Item::Deferred(deferred) => {
                 if let Some(item) = deferred.0() {
-                    Self::attach_item(&item);
+                    self.attach(item);
                 }
             }
         }
     }
 
     // clay: CLAY macro
-    pub fn build<F: FnOnce(&Self)>(&self, items: &[Item<'_>], build_children: Option<F>) {
+    pub fn build<FI, FC>(&self, items: FI, children: FC)
+    where
+        FI: FnOnce(&Self),
+        FC: FnOnce(&Self),
+    {
         unsafe { external::Clay__OpenElement() };
 
-        for item in items {
-            Self::attach_item(item);
-        }
+        items(self);
 
         unsafe { external::Clay__ElementPostConfiguration() };
 
-        if let Some(build_children) = build_children {
-            build_children(self);
-        }
+        children(self);
 
         unsafe { external::Clay__CloseElement() };
     }
 }
 
-pub type NoChildren = Option<fn(&Builder)>;
+pub fn no_children(_: &Builder) {}
 
 #[derive(Debug, Copy, Clone)]
 pub enum Item<'a> {
