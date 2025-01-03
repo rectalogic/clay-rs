@@ -20,26 +20,30 @@ async fn main() {
     loop {
         arena.render(&renderer, |builder| {
             builder.build(
-                &[
-                    clay::Layout {
-                        layout_direction: clay::LayoutDirection::TopToBottom,
-                        padding: clay::Padding { x: 16, y: 16 },
-                        child_gap: 16,
-                        ..clay::default()
-                    }
-                    .into(),
-                    clay::Rectangle {
-                        color: clay::Color::rgb(255., 0., 0.),
-                        ..clay::default()
-                    }
-                    .into(),
-                ],
+                |builder| {
+                    builder.attach(
+                        clay::Layout {
+                            layout_direction: clay::LayoutDirection::TopToBottom,
+                            padding: clay::Padding { x: 16, y: 16 },
+                            child_gap: 16,
+                            ..clay::default()
+                        }
+                        .into(),
+                    );
+                    builder.attach(
+                        clay::Rectangle {
+                            color: clay::Color::rgb(255., 0., 0.),
+                            ..clay::default()
+                        }
+                        .into(),
+                    );
+                },
                 |builder| {
                     child_rect(builder, clay::Color::rgb(0., 255., 0.), font_id);
                     child_rect(builder, clay::Color::rgb(0., 0., 255.), font_id);
                     child_rect(builder, clay::Color::rgb(255., 0., 255.), font_id);
                 },
-            );
+            )
         });
 
         next_frame().await
@@ -48,32 +52,35 @@ async fn main() {
 
 fn child_rect(builder: &Builder, color: clay::Color, font_id: u16) {
     builder.build(
-        &[
-            clay::Layout {
-                padding: clay::Padding { x: 16, y: 16 },
-                sizing: clay::Sizing {
-                    height: clay::SizingAxis::fixed(80.),
-                    ..clay::default()
-                },
-                ..clay::default()
-            }
-            .into(),
-            clay::Rectangle {
-                color,
-                ..clay::default()
-            }
-            .into(),
-        ],
         |builder| {
-            builder.build(
-                &[clay::Text {
+            builder.attach(
+                clay::Layout {
+                    padding: clay::Padding { x: 16, y: 16 },
+                    sizing: clay::Sizing {
+                        height: clay::SizingAxis::fixed(80.),
+                        ..clay::default()
+                    },
+                    ..clay::default()
+                }
+                .into(),
+            );
+            builder.attach(
+                clay::Rectangle {
+                    color,
+                    ..clay::default()
+                }
+                .into(),
+            );
+        },
+        |builder| {
+            builder.attach(
+                clay::Text {
                     font_id,
                     font_size: 18,
                     text_color: clay::Color::rgb(0., 0., 0.),
                     ..clay::default()
                 }
-                .with("Foobar".into())],
-                |_| {},
+                .with("Foobar".into()),
             );
         },
     );

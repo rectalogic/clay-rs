@@ -44,72 +44,81 @@ fn test_simple_ui() {
     let dimensions = clay::Dimensions::new(300.0, 300.0);
     arena.initialize(dimensions, clay::default());
     let mut arena = arena;
+    let color = clay::Color {
+        r: 240.,
+        g: 189.,
+        b: 100.,
+        a: 255.,
+    };
+    const FONT_ID_BODY_24: u16 = 2;
+    // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
+    //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
+    //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
+    // }
     arena.render(&renderer, |builder| {
-        let color = clay::Color {
-            r: 240.,
-            g: 189.,
-            b: 100.,
-            a: 255.,
-        };
-        const FONT_ID_BODY_24: u16 = 2;
-
-        // CLAY(CLAY_IDI("HeroBlob", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_GROW({ .max = 480 }) }, .padding = {16, 16}, .childGap = 16, .childAlignment = {.y = CLAY_ALIGN_Y_CENTER} }), CLAY_BORDER_OUTSIDE_RADIUS(2, color, 10)) {
-        //     CLAY(CLAY_IDI("CheckImage", index), CLAY_LAYOUT({ .sizing = { CLAY_SIZING_FIXED(32) } }), CLAY_IMAGE({ .sourceDimensions = { 128, 128 }, .sourceURL = imageURL })) {}
-        //     CLAY_TEXT(text, CLAY_TEXT_CONFIG({ .fontSize = fontSize, .fontId = FONT_ID_BODY_24, .textColor = color }));
-        // }
         builder.build(
-            &[
-                clay::IdI(clay::String::from("HeroBlob"), 1).into(),
-                clay::Layout {
-                    sizing: clay::Sizing {
-                        width: clay::SizingAxis::grow(0.0, 480.0),
-                        ..clay::default()
-                    },
-                    padding: clay::Padding { x: 16, y: 16 },
-                    child_gap: 16,
-                    child_alignment: clay::ChildAlignment {
-                        y: clay::LayoutAlignmentY::Center,
-                        ..clay::default()
-                    },
-                    ..clay::default()
-                }
-                .into(),
-                clay::Border::outside_radius(2, color, 10.0).into(),
-            ],
             |builder| {
-                builder.build(
-                    &[
-                        clay::Id(clay::String::from("CheckImage")).into(),
-                        clay::Layout {
-                            sizing: clay::Sizing {
-                                width: clay::SizingAxis::fixed(32.),
-                                ..clay::default()
-                            },
+                builder.attach(clay::IdI(clay::String::from("HeroBlob"), 1).into());
+                builder.attach(
+                    clay::Layout {
+                        sizing: clay::Sizing {
+                            width: clay::SizingAxis::grow(0.0, 480.0),
                             ..clay::default()
-                        }
-                        .into(),
-                        clay::Image {
-                            source_dimensions: clay::Dimensions {
-                                width: 128.,
-                                height: 128.,
-                            },
+                        },
+                        padding: clay::Padding { x: 16, y: 16 },
+                        child_gap: 16,
+                        child_alignment: clay::ChildAlignment {
+                            y: clay::LayoutAlignmentY::Center,
                             ..clay::default()
-                        }
-                        .into(), // XXX need extended sourceUrl
-                    ],
-                    |_| {},
-                );
-                builder.build(
-                    &[clay::Text {
-                        font_size: 18,
-                        font_id: FONT_ID_BODY_24,
-                        text_color: color,
+                        },
                         ..clay::default()
                     }
-                    .with(clay::String::from("Some text here"))],
-                    |_| {},
+                    .into(),
+                );
+                builder.attach(clay::Border::outside_radius(2, color, 10.0).into());
+            },
+            |builder| {
+                builder.build(
+                    |builder| {
+                        builder.attach(clay::Id(clay::String::from("CheckImage")).into());
+                        builder.attach(
+                            clay::Layout {
+                                sizing: clay::Sizing {
+                                    width: clay::SizingAxis::fixed(32.),
+                                    ..clay::default()
+                                },
+                                ..clay::default()
+                            }
+                            .into(),
+                        );
+                        builder.attach(
+                            clay::Image {
+                                source_dimensions: clay::Dimensions {
+                                    width: 128.,
+                                    height: 128.,
+                                },
+                                ..clay::default()
+                            }
+                            .into(),
+                        ); // XXX need extended sourceUrl
+                    },
+                    clay::no_children,
+                );
+                builder.build(
+                    |builder| {
+                        builder.attach(
+                            clay::Text {
+                                font_size: 18,
+                                font_id: FONT_ID_BODY_24,
+                                text_color: color,
+                                ..clay::default()
+                            }
+                            .with(clay::String::from("Some text here")),
+                        );
+                    },
+                    clay::no_children,
                 );
             },
-        );
+        )
     });
 }
