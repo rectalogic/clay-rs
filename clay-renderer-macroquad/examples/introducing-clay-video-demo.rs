@@ -105,16 +105,6 @@ async fn main() {
     loop {
         let mut selected_document_index = 0;
 
-        let handle_sidebar_interaction =
-            |_element_id: clay::ElementId, pointer_data: clay::PointerData, user_data: isize| {
-                if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame
-                    && user_data >= 0
-                    && user_data < documents.len() as isize
-                {
-                    selected_document_index = user_data as usize;
-                }
-            };
-
         arena.render(&renderer, |builder| {
             builder.build(
                 |builder| {
@@ -317,11 +307,18 @@ async fn main() {
                                                     }
                                                     .attach(builder);
                                                 } else {
-                                                    // XXX can't use closures with FFI
-                                                    // clay::Builder::set_on_hover_callback(
-                                                    //     handle_sidebar_interaction,
-                                                    //     i as isize,
-                                                    // );
+                                                    /*
+                                                    clay::Builder::set_on_hover_callback(
+                                                        |_element_id: clay::ElementId, pointer_data: clay::PointerData| {
+                                                            if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame
+                                                                && i < documents.len()
+                                                            {
+                                                                selected_document_index = i;
+                                                            }
+                                                        }
+                                                    );
+                                                    */
+                                                
                                                     if clay::Builder::is_hovered() {
                                                         clay::Rectangle {
                                                             color: clay::Color::rgba(

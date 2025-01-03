@@ -3,7 +3,6 @@ use crate::external;
 use crate::system::{ElementConfigType, ElementConfigUnion};
 use std::os::raw::c_float;
 use std::os::raw::c_void;
-pub type OnHoverCallback = extern "C" fn(data::ElementId, data::PointerData, isize);
 
 pub trait Element {
     fn attach(&self, builder: &crate::ui::Builder);
@@ -29,9 +28,35 @@ impl Builder {
         unsafe { external::Clay__CloseElement() };
     }
 
+    // https://adventures.michaelfbryan.com/posts/rust-closures-in-ffi/
+    unsafe extern "C" fn hover_trampoline<F>(
+        element_id: data::ElementId,
+        pointer_data: data::PointerData,
+        user_data: isize,
+    ) where
+        F: FnMut(data::ElementId, data::PointerData),
+    {
+        let user_data = &mut *(user_data as *mut F);
+        user_data(element_id, pointer_data);
+    }
+
+    fn get_hover_trampoline<F>(_closure: &F) -> external::OnHoverCallback
+    where
+        F: FnMut(data::ElementId, data::PointerData),
+    {
+        Self::hover_trampoline::<F>
+    }
+
     // clay: Clay_OnHover
-    pub fn set_on_hover_callback(on_hover: OnHoverCallback, user_data: isize) {
-        unsafe { external::Clay_OnHover(on_hover, user_data) };
+    pub fn set_on_hover_callback<F>(on_hover: F)
+    where
+        F: FnMut(data::ElementId, data::PointerData),
+    {
+        let mut on_hover = on_hover;
+        unsafe {
+            let trampoline = Self::get_hover_trampoline(&on_hover);
+            external::Clay_OnHover(trampoline, &mut on_hover as *mut _ as isize);
+        }
     }
 
     // clay: Clay_Hovered

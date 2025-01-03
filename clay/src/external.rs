@@ -6,6 +6,8 @@ use crate::system::{
 use crate::ui;
 use std::os::raw::{c_float, c_void};
 
+pub(crate) type OnHoverCallback = unsafe extern "C" fn(data::ElementId, data::PointerData, isize);
+
 #[link(name = "clay")]
 extern "C" {
     pub(crate) fn Clay_MinMemorySize() -> u32;
@@ -27,7 +29,7 @@ extern "C" {
     pub(crate) fn Clay_SetLayoutDimensions(dimensions: data::Dimensions);
 
     pub(crate) fn Clay_Hovered() -> bool;
-    pub(crate) fn Clay_OnHover(on_hover_callback: ui::OnHoverCallback, user_data: isize);
+    pub(crate) fn Clay_OnHover(on_hover_callback: OnHoverCallback, user_data: isize);
     pub(crate) fn Clay_PointerOver(element_id: data::ElementId) -> bool;
     pub(crate) fn Clay_GetScrollContainerData(id: data::ElementId) -> data::ScrollContainerData;
     pub(crate) fn Clay_SetQueryScrollOffsetFunction(
