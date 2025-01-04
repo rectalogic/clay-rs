@@ -6,7 +6,7 @@ use crate::system::{
 use crate::ui;
 use std::os::raw::{c_float, c_void};
 
-pub(crate) type OnHoverCallback = unsafe extern "C" fn(data::ElementId, data::PointerData, isize);
+pub(crate) type OnHoverCallback = unsafe extern "C" fn(ui::ElementId, data::PointerData, isize);
 
 #[link(name = "clay")]
 extern "C" {
@@ -30,8 +30,8 @@ extern "C" {
 
     pub(crate) fn Clay_Hovered() -> bool;
     pub(crate) fn Clay_OnHover(on_hover_callback: OnHoverCallback, user_data: isize);
-    pub(crate) fn Clay_PointerOver(element_id: data::ElementId) -> bool;
-    pub(crate) fn Clay_GetScrollContainerData(id: data::ElementId) -> data::ScrollContainerData;
+    pub(crate) fn Clay_PointerOver(element_id: ui::ElementId) -> bool;
+    pub(crate) fn Clay_GetScrollContainerData(id: ui::ElementId) -> data::ScrollContainerData;
     pub(crate) fn Clay_SetQueryScrollOffsetFunction(
         query_scroll_offset_callback: QueryScrollOffsetCallback,
     );
@@ -48,7 +48,7 @@ extern "C" {
     pub(crate) fn Clay__CloseElement();
     pub(crate) fn Clay__StoreLayoutConfig<'a>(config: ui::Layout) -> &'a ui::Layout;
     pub(crate) fn Clay__ElementPostConfiguration();
-    pub(crate) fn Clay__AttachId(id: data::ElementId);
+    pub(crate) fn Clay__AttachId(id: ui::ElementId);
     pub(crate) fn Clay__AttachLayoutConfig<'a>(config: &'a ui::Layout);
     pub(crate) fn Clay__AttachElementConfig(config: ElementConfigUnion, r#type: ElementConfigType);
     pub(crate) fn Clay__StoreRectangleElementConfig<'a>(config: ui::Rectangle)
@@ -63,8 +63,8 @@ extern "C" {
         key: data::String,
         offset: u32,
         seed: u32,
-    ) -> data::ElementId<'a>;
-    pub(crate) fn Clay_GetElementId<'a>(id: data::String) -> data::ElementId<'a>;
+    ) -> ui::ElementId<'a>;
+    pub(crate) fn Clay_GetElementId<'a>(id: data::String) -> ui::ElementId<'a>;
     pub(crate) fn Clay_RenderCommandArray_Get<'a>(
         array: &RenderCommandArray<'a>,
         index: i32,

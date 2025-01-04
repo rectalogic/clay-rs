@@ -4,11 +4,6 @@ use macroquad::prelude::*;
 
 // Based on https://github.com/nicbarker/clay/tree/main/examples/introducing-clay-video-demo
 
-struct Document<'a> {
-    title: clay::String<'a>,
-    contents: clay::String<'a>,
-}
-
 const WINDOW_SIZE: clay::Dimensions = clay::Dimensions {
     width: 1024.0,
     height: 768.0,
@@ -21,6 +16,11 @@ fn window_conf() -> Conf {
         window_height: WINDOW_SIZE.height as i32,
         ..Default::default()
     }
+}
+
+struct Document<'a> {
+    title: clay::String<'a>,
+    contents: clay::String<'a>,
 }
 
 #[macroquad::main(window_conf)]
@@ -102,13 +102,20 @@ async fn main() {
         );
     };
 
-    loop {
-        let mut selected_document_index = 0;
+    let mut selected_document_index = 0;
 
+    let hover_callback = 
+    |element_id: clay::ElementId, pointer_data: clay::PointerData| {
+        if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame {
+            selected_document_index = element_id.offset() as usize;
+        }
+    };
+
+    loop {
         arena.render(&renderer, |builder| {
             builder.build(
                 |builder| {
-                    clay::Id("OuterContainer".into()).attach(builder);
+                    clay::ElementId::new_id("OuterContainer".into()).attach(builder);
                     clay::Rectangle {
                         color: clay::Color::rgb(43., 41., 51.),
                         ..d()
@@ -126,7 +133,7 @@ async fn main() {
                 |builder| {
                     builder.build(
                         |builder| {
-                            clay::Id("HeaderBar".into()).attach(builder);
+                            clay::ElementId::new_id("HeaderBar".into()).attach(builder);
                             content_background.attach(builder);
                             clay::Layout {
                                 sizing: clay::Sizing {
@@ -146,7 +153,7 @@ async fn main() {
                         |builder| {
                             builder.build(
                                 |builder| {
-                                    clay::Id("FileButton".into()).attach(builder);
+                                    clay::ElementId::new_id("FileButton".into()).attach(builder);
                                     clay::Layout {
                                         padding: clay::Padding { x: 16, y: 16 },
                                         ..d()
@@ -176,7 +183,7 @@ async fn main() {
                                     if file_menu_visible {
                                         builder.build(
                                             |builder| {
-                                                clay::Id("FileMenu".into()).attach(builder);
+                                                clay::ElementId::new_id("FileMenu".into()).attach(builder);
                                                 clay::Floating {
                                                     attachment: clay::FloatingAttachPoints {
                                                         parent:
@@ -257,7 +264,7 @@ async fn main() {
 
                     builder.build(
                         |builder| {
-                            clay::Id("LowerContent".into()).attach(builder);
+                            clay::ElementId::new_id("LowerContent".into()).attach(builder);
                             clay::Layout {
                                 sizing: layout_expand,
                                 child_gap: 16,
@@ -268,7 +275,7 @@ async fn main() {
                         |builder| {
                             builder.build(
                                 |builder| {
-                                    clay::Id("Sidebar".into()).attach(builder);
+                                    clay::ElementId::new_id("Sidebar".into()).attach(builder);
                                     content_background.attach(builder);
                                     clay::Layout {
                                         layout_direction: clay::LayoutDirection::TopToBottom,
@@ -295,6 +302,8 @@ async fn main() {
 
                                         builder.build(
                                             |builder| {
+                                                // Store index as IdI offset
+                                                clay::ElementId::new_idi("DocumentButton".into(), i as u32).attach(builder);
                                                 sidebar_button_layout.attach(builder);
                                                 if i == selected_document_index {
                                                     clay::Rectangle {
@@ -307,17 +316,7 @@ async fn main() {
                                                     }
                                                     .attach(builder);
                                                 } else {
-                                                    /*
-                                                    clay::Builder::set_on_hover_callback(
-                                                        |_element_id: clay::ElementId, pointer_data: clay::PointerData| {
-                                                            if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame
-                                                                && i < documents.len()
-                                                            {
-                                                                selected_document_index = i;
-                                                            }
-                                                        }
-                                                    );
-                                                    */
+                                                    // builder.set_on_hover_callback(&hover_callback);
                                                 
                                                     if clay::Builder::is_hovered() {
                                                         clay::Rectangle {
@@ -354,7 +353,7 @@ async fn main() {
 
                             builder.build(
                                 |builder| {
-                                    clay::Id("MainContent".into()).attach(builder);
+                                    clay::ElementId::new_id("MainContent".into()).attach(builder);
                                     content_background.attach(builder);
                                     clay::Scroll {
                                         vertical: true,

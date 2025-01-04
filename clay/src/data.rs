@@ -125,30 +125,6 @@ pub struct PointerData {
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-// clay: Clay_ElementId
-pub struct ElementId<'a> {
-    id: u32,
-    offset: u32,
-    base_id: u32,
-    string_id: String<'a>,
-}
-
-impl ElementId<'_> {
-    pub fn find(id: String) -> Self {
-        unsafe { external::Clay_GetElementId(id) }
-    }
-    // clay: Clay_PointerOver
-    pub fn is_pointer_over(&self) -> bool {
-        unsafe { external::Clay_PointerOver(*self) }
-    }
-    // clay: Clay_GetScrollContainerData
-    pub fn get_scroll_container_data(&self) -> ScrollContainerData<'_> {
-        unsafe { external::Clay_GetScrollContainerData(*self) }
-    }
-}
-
-#[repr(C)]
-#[derive(Copy, Clone)]
 // clay: Clay_ScrollContainerData
 pub struct ScrollContainerData<'a> {
     scroll_position: &'a Vector2,

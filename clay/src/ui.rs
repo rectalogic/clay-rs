@@ -1,6 +1,7 @@
 use crate::data;
 use crate::external;
 use crate::system::{ElementConfigType, ElementConfigUnion};
+use std::marker::PhantomData;
 use std::os::raw::c_float;
 use std::os::raw::c_void;
 
@@ -8,9 +9,13 @@ pub trait Element {
     fn attach(&self, builder: &crate::ui::Builder);
 }
 
-pub struct Builder(pub(crate) ());
+pub struct Builder<'a>((), PhantomData<&'a ()>);
 
-impl Builder {
+impl<'a> Builder<'a> {
+    pub(crate) fn new() -> Self {
+        Self((), PhantomData)
+    }
+
     // clay: CLAY macro
     pub fn build<FI, FC>(&self, items: FI, children: FC)
     where
@@ -30,11 +35,11 @@ impl Builder {
 
     // https://adventures.michaelfbryan.com/posts/rust-closures-in-ffi/
     unsafe extern "C" fn hover_trampoline<F>(
-        element_id: data::ElementId,
+        element_id: ElementId,
         pointer_data: data::PointerData,
         user_data: isize,
     ) where
-        F: FnMut(data::ElementId, data::PointerData),
+        F: FnMut(ElementId, data::PointerData),
     {
         let user_data = &mut *(user_data as *mut F);
         user_data(element_id, pointer_data);
@@ -42,15 +47,15 @@ impl Builder {
 
     fn get_hover_trampoline<F>(_closure: &F) -> external::OnHoverCallback
     where
-        F: FnMut(data::ElementId, data::PointerData),
+        F: FnMut(ElementId, data::PointerData),
     {
         Self::hover_trampoline::<F>
     }
 
     // clay: Clay_OnHover
-    pub fn set_on_hover_callback<F>(on_hover: F)
+    pub fn set_on_hover_callback<F>(&'a self, on_hover: F)
     where
-        F: FnMut(data::ElementId, data::PointerData),
+        F: FnMut(ElementId, data::PointerData) + 'a,
     {
         let mut on_hover = on_hover;
         unsafe {
@@ -86,23 +91,47 @@ impl Builder {
 
 pub fn no_children(_: &Builder) {}
 
+#[repr(C)]
 #[derive(Debug, Copy, Clone)]
+// clay: Clay_ElementId
 // clay: CLAY_ID
-pub struct Id<'a>(pub data::String<'a>);
+// clay: CLAY_IDI
+pub struct ElementId<'a> {
+    id: u32,
+    offset: u32,
+    base_id: u32,
+    string_id: data::String<'a>,
+}
 
-impl Element for Id<'_> {
-    fn attach(&self, _builder: &Builder) {
-        unsafe { external::Clay__AttachId(external::Clay__HashString(self.0, 0, 0)) };
+impl<'a> ElementId<'a> {
+    pub fn new_id(string_id: data::String<'a>) -> Self {
+        unsafe { external::Clay__HashString(string_id, 0, 0) }
+    }
+    pub fn new_idi(string_id: data::String<'a>, offset: u32) -> Self {
+        unsafe { external::Clay__HashString(string_id, offset, 0) }
+    }
+    pub fn offset(&self) -> u32 {
+        self.offset
+    }
+    pub fn string_id(&'a self) -> data::String<'a> {
+        self.string_id
+    }
+    pub fn find(id: data::String) -> Self {
+        unsafe { external::Clay_GetElementId(id) }
+    }
+    // clay: Clay_PointerOver
+    pub fn is_pointer_over(&self) -> bool {
+        unsafe { external::Clay_PointerOver(*self) }
+    }
+    // clay: Clay_GetScrollContainerData
+    pub fn get_scroll_container_data(&self) -> data::ScrollContainerData<'_> {
+        unsafe { external::Clay_GetScrollContainerData(*self) }
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-// clay: CLAY_IDI
-pub struct IdI<'a>(pub data::String<'a>, pub u32);
-
-impl Element for IdI<'_> {
+impl Element for ElementId<'_> {
     fn attach(&self, _builder: &Builder) {
-        unsafe { external::Clay__AttachId(external::Clay__HashString(self.0, self.1, 0)) };
+        unsafe { external::Clay__AttachId(*self) };
     }
 }
 

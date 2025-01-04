@@ -132,7 +132,7 @@ impl<'a> Arena<'a> {
     {
         Arena::set_layout_dimensions(renderer.prepare_frame());
         unsafe { external::Clay_BeginLayout() };
-        let builder = &ui::Builder(());
+        let builder = &ui::Builder::new();
         ui(builder);
         self.render_commands = unsafe { external::Clay_EndLayout() }.into_iter();
         renderer.render(&mut self.render_commands);

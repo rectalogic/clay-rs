@@ -59,7 +59,7 @@ fn test_simple_ui() {
     arena.render(&renderer, |builder| {
         builder.build(
             |builder| {
-                clay::IdI(clay::String::from("HeroBlob"), 1).attach(builder);
+                clay::ElementId::new_idi(clay::String::from("HeroBlob"), 1).attach(builder);
                 clay::Layout {
                     sizing: clay::Sizing {
                         width: clay::SizingAxis::grow(0.0, 480.0),
@@ -79,7 +79,7 @@ fn test_simple_ui() {
             |builder| {
                 builder.build(
                     |builder| {
-                        clay::Id(clay::String::from("CheckImage")).attach(builder);
+                        clay::ElementId::new_id(clay::String::from("CheckImage")).attach(builder);
 
                         clay::Layout {
                             sizing: clay::Sizing {
