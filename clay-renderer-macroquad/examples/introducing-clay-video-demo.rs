@@ -117,7 +117,9 @@ async fn main() {
     unsafe  extern "C"  fn hover_callback_raw(element_id: clay::ElementId, pointer_data: clay::PointerData, user_data: isize) {
         if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame {
             unsafe {
-                let current_selected_document_index: &Cell<usize> = &*(user_data as *const Cell<usize>);
+                let ptr = user_data as *const &Cell<usize>;
+                assert!(!ptr.is_null());
+                let current_selected_document_index: &Cell<usize> = *ptr;
                 current_selected_document_index .set( element_id.offset() as usize);
             }
         }
@@ -329,8 +331,7 @@ async fn main() {
                                                     .attach(builder);
                                                 } else {
                                                     // builder.set_on_hover_callback(&mut hover_callback);
-                                                    let index_ptr: isize = current_selected_document_index as *const Cell<usize> as isize;
-                                                    builder.set_on_hover_callback_raw(hover_callback_raw, index_ptr);
+                                                    builder.set_on_hover_callback_raw(hover_callback_raw, &current_selected_document_index);
                                                 
                                                     if clay::Builder::is_hovered() {
                                                         clay::Rectangle {

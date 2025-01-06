@@ -65,13 +65,14 @@ impl<'a> Builder<'a> {
     }
 
     // clay: Clay_OnHover
-    pub fn set_on_hover_callback_raw(
+    pub fn set_on_hover_callback_raw<T>(
         &self,
         on_hover: unsafe extern "C" fn(ElementId, data::PointerData, isize),
-        user_data: isize,
+        user_data: &T,
     ) {
+        let user_data_ptr: isize = user_data as *const T as isize;
         unsafe {
-            external::Clay_OnHover(on_hover, user_data);
+            external::Clay_OnHover(on_hover, user_data_ptr);
         }
     }
 
