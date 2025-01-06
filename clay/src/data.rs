@@ -1,4 +1,4 @@
-use crate::{external, ui};
+use crate::ui;
 use clay_macros::packed_enum;
 use core::slice;
 use std::{

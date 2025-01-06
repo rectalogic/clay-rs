@@ -53,14 +53,25 @@ impl<'a> Builder<'a> {
     }
 
     // clay: Clay_OnHover
-    pub fn set_on_hover_callback<F>(&'a self, on_hover: F)
+    pub fn set_on_hover_callback<F>(&'a self, on_hover: &mut F)
     where
         F: FnMut(ElementId, data::PointerData) + 'a,
     {
         let mut on_hover = on_hover;
+        let trampoline = Self::get_hover_trampoline(&on_hover);
         unsafe {
-            let trampoline = Self::get_hover_trampoline(&on_hover);
             external::Clay_OnHover(trampoline, &mut on_hover as *mut _ as isize);
+        }
+    }
+
+    // clay: Clay_OnHover
+    pub fn set_on_hover_callback_raw(
+        &self,
+        on_hover: unsafe extern "C" fn(ElementId, data::PointerData, isize),
+        user_data: isize,
+    ) {
+        unsafe {
+            external::Clay_OnHover(on_hover, user_data);
         }
     }
 

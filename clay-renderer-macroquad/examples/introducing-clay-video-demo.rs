@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use clay::default as d;
 use clay::prelude::*;
 use macroquad::prelude::*;
@@ -102,15 +104,24 @@ async fn main() {
         );
     };
 
-    let mut selected_document_index = 0;
-
-    let hover_callback = 
+    let current_selected_document_index = &Cell::new(0);
+    // XXX can't get closures working...
+    /*
+    let mut hover_callback = 
     |element_id: clay::ElementId, pointer_data: clay::PointerData| {
         if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame {
-            selected_document_index = element_id.offset() as usize;
+            current_selected_document_index .set( element_id.offset() as usize);
         }
     };
-
+    */
+    unsafe  extern "C"  fn hover_callback_raw(element_id: clay::ElementId, pointer_data: clay::PointerData, user_data: isize) {
+        if pointer_data.state == clay::PointerDataInteractionState::PressedThisFrame {
+            unsafe {
+                let current_selected_document_index: &Cell<usize> = &*(user_data as *const Cell<usize>);
+                current_selected_document_index .set( element_id.offset() as usize);
+            }
+        }
+    }
     loop {
         arena.render(&renderer, |builder| {
             builder.build(
@@ -305,7 +316,8 @@ async fn main() {
                                                 // Store index as IdI offset
                                                 clay::ElementId::new_idi("DocumentButton".into(), i as u32).attach(builder);
                                                 sidebar_button_layout.attach(builder);
-                                                if i == selected_document_index {
+
+                                                if i == current_selected_document_index.get() {
                                                     clay::Rectangle {
                                                         color: clay::Color::rgb(
                                                             120., 120., 120.,
@@ -316,7 +328,9 @@ async fn main() {
                                                     }
                                                     .attach(builder);
                                                 } else {
-                                                    // builder.set_on_hover_callback(&hover_callback);
+                                                    // builder.set_on_hover_callback(&mut hover_callback);
+                                                    let index_ptr: isize = current_selected_document_index as *const Cell<usize> as isize;
+                                                    builder.set_on_hover_callback_raw(hover_callback_raw, index_ptr);
                                                 
                                                     if clay::Builder::is_hovered() {
                                                         clay::Rectangle {
@@ -370,7 +384,7 @@ async fn main() {
                                     .attach(builder);
                                 },
                                 |builder| {
-                                    let selected_document = &documents[selected_document_index];
+                                    let selected_document = &documents[current_selected_document_index.get()];
                                     builder.build(
                                         |builder| {
                                             clay::Text {
